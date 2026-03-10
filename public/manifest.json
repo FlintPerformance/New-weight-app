@@ -1,0 +1,14 @@
+{
+  "name": "Steady",
+  "short_name": "Steady",
+  "description": "Track your weight, set goals, and stay accountable with your circle.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F7F4",
+  "theme_color": "#2B9B8F",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-touch-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

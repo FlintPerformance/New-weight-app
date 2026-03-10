@@ -7,13 +7,13 @@ import { syncData, pullFromCloud } from './sync';
 import AuthView from './views/AuthView';
 import Onboarding from './views/Onboarding';
 import Dashboard from './views/Dashboard';
-import LogWeight from './views/LogWeight';
-import History from './views/History';
-import Goals from './views/Goals';
-import Settings from './views/Settings';
+import Progress from './views/Progress';
 import Circle from './views/Circle';
+import Profile from './views/Profile';
 import Layout from './components/Layout';
 import Toast from './components/Toast';
+import WeighInSheet from './components/WeighInSheet';
+import CelebrationOverlay from './components/CelebrationOverlay';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const AppDataContext = createContext(null);
@@ -59,6 +59,8 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [unit, setUnit] = useState(() => localStorage.getItem('steady-unit') || 'lb');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showWeighIn, setShowWeighIn] = useState(false);
+  const [celebrationData, setCelebrationData] = useState(null);
   const [pendingInvite, setPendingInvite] = useState(() => {
     const code = new URLSearchParams(window.location.search).get('join');
     if (code) {
@@ -92,15 +94,13 @@ export default function App() {
     return () => { cancelled = true; };
   }, [user?.id, data.loaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Show onboarding for new users who haven't completed it and have no weight data
-  // Wait until cloud sync finishes so we don't falsely show it to returning users
+  // Show onboarding for new users
   const checkOnboarding = useCallback(() => {
     if (user && data.loaded && syncedOnce && data.weights.length === 0 && !localStorage.getItem('steady-onboarding-done')) {
       setShowOnboarding(true);
     }
   }, [user, data.loaded, syncedOnce, data.weights.length]);
 
-  // Run check when data loads
   useEffect(() => { checkOnboarding(); }, [checkOnboarding]);
 
   // Auto-navigate to circle if invite code in URL
@@ -141,6 +141,17 @@ export default function App() {
     localStorage.setItem('steady-unit', u);
   }, []);
 
+  const openWeighIn = useCallback(() => setShowWeighIn(true), []);
+  const closeWeighIn = useCallback(() => setShowWeighIn(false), []);
+
+  const handleWeighInSuccess = useCallback((weightData) => {
+    setShowWeighIn(false);
+    // Brief delay so the sheet closes before celebration opens
+    setTimeout(() => setCelebrationData(weightData), 100);
+  }, []);
+
+  const closeCelebration = useCallback(() => setCelebrationData(null), []);
+
   const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User';
 
   const dataValue = useMemo(() => ({
@@ -170,8 +181,9 @@ export default function App() {
     sync: handleSync,
     showToast,
     changeUnit,
+    openWeighIn,
     clearPendingInvite: () => { sessionStorage.removeItem('pending-invite'); setPendingInvite(null); }
-  }), [navigate, goBack, signUp, signIn, signOut, data, handleSync, showToast, changeUnit]);
+  }), [navigate, goBack, signUp, signIn, signOut, data, handleSync, showToast, changeUnit, openWeighIn]);
 
   if (authLoading) {
     return (
@@ -197,11 +209,9 @@ export default function App() {
 
   const VIEW_COMPONENTS = {
     dashboard: Dashboard,
-    log: LogWeight,
-    history: History,
-    goals: Goals,
+    progress: Progress,
     circle: Circle,
-    settings: Settings,
+    profile: Profile,
   };
 
   const renderViews = () => {
@@ -244,6 +254,12 @@ export default function App() {
           )}
         </Layout>
         <OfflineBanner />
+        {showWeighIn && (
+          <WeighInSheet onClose={closeWeighIn} onSuccess={handleWeighInSuccess} />
+        )}
+        {celebrationData && (
+          <CelebrationOverlay weightData={celebrationData} onClose={closeCelebration} />
+        )}
         {toast && <Toast key={toast.key} message={toast.message} type={toast.type} />}
       </AppActionsContext.Provider>
     </AppDataContext.Provider>

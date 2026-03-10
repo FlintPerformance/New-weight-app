@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAppData, useAppActions } from '../App';
-import { formatWeight, getWeightChange, getMovingAverage, getStreak, formatDateShort, aggregateDaily, daysAgo } from '../utils';
+import { formatWeight, getWeightChange, getMovingAverage, getStreak, formatDateShort, aggregateDaily, daysAgo, getTimeAgo } from '../utils';
+import { supabase } from '../supabase';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 
 function getGreeting(name) {
@@ -30,8 +31,8 @@ function getChangeMessage(change) {
 }
 
 export default function Dashboard() {
-  const { weights, goals, unit, displayName } = useAppData();
-  const { navigate } = useAppActions();
+  const { weights, goals, unit, displayName, user } = useAppData();
+  const { navigate, openWeighIn } = useAppActions();
 
   const latest = weights[0];
   const activeGoal = goals.find(g => g.active);
@@ -56,22 +57,60 @@ export default function Dashboard() {
 
   const changeMsg = getChangeMessage(change);
 
+  // Social preview — fetch recent circle activity
+  const [friendActivity, setFriendActivity] = useState([]);
+  const [friendsLoaded, setFriendsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    const loadFriendActivity = async () => {
+      try {
+        // Get user's circles
+        const { data: memberships } = await supabase
+          .from('circle_members')
+          .select('circle_id')
+          .eq('user_id', user.id);
+
+        if (!memberships?.length || cancelled) {
+          setFriendsLoaded(true);
+          return;
+        }
+
+        const circleIds = memberships.map(m => m.circle_id);
+
+        // Get recent entries from circle members (excluding self)
+        const { data: entries } = await supabase
+          .from('circle_feed')
+          .select('id, user_id, weight, unit, date, created_at, display_name, avatar_url')
+          .in('circle_id', circleIds)
+          .neq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (!cancelled && entries) {
+          setFriendActivity(entries);
+        }
+      } catch {
+        // Silent fail — social preview is non-critical
+      } finally {
+        if (!cancelled) setFriendsLoaded(true);
+      }
+    };
+
+    loadFriendActivity();
+    return () => { cancelled = true; };
+  }, [user]);
+
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-cream">{getGreeting(displayName)}</h1>
-          {streak > 0 && (
-            <p className="text-cream/60 text-sm mt-0.5">{getStreakMessage(streak)}</p>
-          )}
-        </div>
-        <button
-          onClick={() => navigate('log')}
-          className="bg-accent hover:bg-accent-dark text-white px-5 py-2.5 rounded-sm font-semibold text-sm transition-all shadow-soft hover:shadow-glow active:scale-95"
-        >
-          + Weigh In
-        </button>
+      <div className="mb-6">
+        <h1 className="font-heading text-2xl font-bold text-cream">{getGreeting(displayName)}</h1>
+        {streak > 0 && (
+          <p className="text-cream/60 text-sm mt-0.5">{getStreakMessage(streak)}</p>
+        )}
       </div>
 
       {/* Desktop two-column layout */}
@@ -99,7 +138,7 @@ export default function Dashboard() {
             ) : (
               <div className="py-2">
                 <p className="text-cream/50 text-lg mb-2">No entries yet</p>
-                <p className="text-cream/40 text-sm">Tap "Weigh In" to log your first entry!</p>
+                <p className="text-cream/40 text-sm">Tap the + button to log your first entry!</p>
               </div>
             )}
           </div>
@@ -118,7 +157,7 @@ export default function Dashboard() {
             </div>
             <div
               className="bg-surface-mid rounded-sm p-4 border border-black/5 text-center cursor-pointer hover:border-accent/30 shadow-soft transition-all hover:shadow-card"
-              onClick={() => navigate('goals')}
+              onClick={() => navigate('progress')}
             >
               <p className="text-cream/60 text-xs font-medium mb-1">Goal</p>
               {goalProgress ? (
@@ -132,21 +171,49 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Social Preview */}
+          {friendsLoaded && friendActivity.length > 0 && (
+            <div className="bg-surface-mid rounded-sm p-4 border border-black/5 mb-4 shadow-soft">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-cream/60 text-xs font-medium uppercase tracking-wider">Friend Activity</p>
+                <button onClick={() => navigate('circle')} className="text-accent text-xs font-medium hover:underline">See all</button>
+              </div>
+              <div className="space-y-2.5">
+                {friendActivity.map(entry => (
+                  <div key={entry.id} className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent text-xs font-bold shrink-0">
+                      {entry.avatar_url ? (
+                        <img src={entry.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        (entry.display_name || '?')[0]?.toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-cream text-sm font-medium truncate">{entry.display_name || 'Friend'}</p>
+                      <p className="text-cream/40 text-xs">{getTimeAgo(new Date(entry.created_at).getTime())}</p>
+                    </div>
+                    <p className="text-cream font-semibold text-sm">{formatWeight(entry.weight, entry.unit || unit)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Actions — only show if no friends preview, or on mobile below friends */}
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => navigate('history')}
+              onClick={() => navigate('progress')}
               className="bg-surface-mid hover:bg-surface-up border border-black/5 rounded-sm p-5 text-left transition-all shadow-soft hover:shadow-card group"
             >
-              <p className="text-cream font-semibold text-sm group-hover:text-accent transition-colors">My Journey</p>
-              <p className="text-cream/50 text-xs mt-1">See your progress</p>
+              <p className="text-cream font-semibold text-sm group-hover:text-accent transition-colors">My Progress</p>
+              <p className="text-cream/50 text-xs mt-1">Charts, goals & history</p>
             </button>
             <button
-              onClick={() => navigate('circle')}
-              className="bg-surface-mid hover:bg-surface-up border border-black/5 rounded-sm p-5 text-left transition-all shadow-soft hover:shadow-card group"
+              onClick={openWeighIn}
+              className="bg-accent/5 hover:bg-accent/10 border border-accent/20 rounded-sm p-5 text-left transition-all shadow-soft hover:shadow-glow group"
             >
-              <p className="text-cream font-semibold text-sm group-hover:text-accent transition-colors">My Friends</p>
-              <p className="text-cream/50 text-xs mt-1">Stay accountable</p>
+              <p className="text-accent font-semibold text-sm">Quick Log</p>
+              <p className="text-cream/50 text-xs mt-1">Tap to weigh in now</p>
             </button>
           </div>
         </div>

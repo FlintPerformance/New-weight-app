@@ -1223,14 +1223,14 @@ export default function Circle() {
                     <XAxis
                       dataKey="date"
                       tickFormatter={formatDateShort}
-                      tick={{ fill: '#2D2A3366', fontSize: 10 }}
+                      tick={{ fill: '#2D2A3366', fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
                       interval="preserveStartEnd"
                     />
                     <YAxis
                       domain={['auto', 'auto']}
-                      tick={{ fill: '#2D2A3366', fontSize: 10 }}
+                      tick={{ fill: '#2D2A3366', fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
                       width={40}

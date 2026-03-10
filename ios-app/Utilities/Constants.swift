@@ -1,0 +1,71 @@
+import SwiftUI
+
+enum AppColors {
+    static let accent = Color(hex: "#2B9B8F")
+    static let accentDark = Color(hex: "#238079")
+    static let success = Color(hex: "#22C55E")
+    static let danger = Color(hex: "#EF4444")
+    static let warning = Color(hex: "#E5A63E")
+
+    static let graphColors: [(color: Color, hex: String, label: String)] = [
+        (Color(hex: "#2B9B8F"), "#2B9B8F", "Teal"),
+        (Color(hex: "#3b82f6"), "#3b82f6", "Blue"),
+        (Color(hex: "#22c55e"), "#22c55e", "Green"),
+        (Color(hex: "#a855f7"), "#a855f7", "Purple"),
+        (Color(hex: "#f59e0b"), "#f59e0b", "Amber"),
+        (Color(hex: "#ec4899"), "#ec4899", "Pink"),
+        (Color(hex: "#06b6d4"), "#06b6d4", "Cyan"),
+        (Color(hex: "#ef4444"), "#ef4444", "Red"),
+    ]
+}
+
+// MARK: - Color hex init
+
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 6:
+            (a, r, g, b) = (255, (int >> 16) & 0xFF, (int >> 8) & 0xFF, int & 0xFF)
+        case 8:
+            (a, r, g, b) = ((int >> 24) & 0xFF, (int >> 16) & 0xFF, (int >> 8) & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+}
+
+// MARK: - Streak messages
+
+enum StreakMessages {
+    static func message(for streak: Int) -> String {
+        switch streak {
+        case 0: return "Let's get started today!"
+        case 1: return "Great start! Day one down."
+        case 2...3: return "You're building momentum!"
+        case 4...7: return "You're on a roll! Keep going!"
+        case 8...14: return "Two weeks strong! Amazing!"
+        case 15...30: return "Incredible consistency!"
+        default: return "You're unstoppable!"
+        }
+    }
+
+    static func celebrationMessage(streak: Int, diff: Double?) -> String {
+        if streak >= 14 { return "Absolutely unstoppable!" }
+        if streak >= 7 { return "You're on fire!" }
+        if streak >= 3 { return "Keep it rolling!" }
+        if let diff, diff < -0.5 { return "Trending down — nice!" }
+        if let diff, diff < 0 { return "Every bit counts!" }
+        return "Logged! You got this!"
+    }
+}

@@ -128,15 +128,15 @@ export default function History() {
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="font-heading text-2xl font-bold text-cream">History</h1>
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="font-heading text-2xl font-bold text-cream">Your Journey</h1>
         <div className="flex gap-1 bg-surface-up rounded-sm p-0.5">
           {[['7', '7d'], ['30', '30d'], ['90', '90d'], ['all', 'All']].map(([val, label]) => (
             <button
               key={val}
               onClick={() => handleRangeChange(val)}
               className={`px-2.5 py-1 rounded-sm text-xs font-medium transition-colors ${
-                range === val ? 'bg-accent text-white' : 'text-cream/50 hover:text-cream'
+                range === val ? 'bg-accent text-white' : 'text-cream/60 hover:text-cream'
               }`}
             >
               {label}
@@ -147,18 +147,18 @@ export default function History() {
 
       {/* Chart */}
       {chartData.length > 1 && (
-        <div className="bg-surface-mid rounded-sm p-4 border border-black/5 mb-4">
+        <div className="bg-surface-mid rounded-sm p-4 border border-black/5 mb-5 shadow-card">
           <div className="flex items-center justify-end mb-2">
             <div className="flex gap-1 bg-surface-up rounded-sm p-0.5">
               <button
                 onClick={() => setChartMode('line')}
-                className={`px-2 py-0.5 rounded-sm text-[10px] font-medium transition-colors ${chartMode === 'line' ? 'bg-accent text-white' : 'text-cream/50 hover:text-cream'}`}
+                className={`px-2 py-0.5 rounded-sm text-xs font-medium transition-colors ${chartMode === 'line' ? 'bg-accent text-white' : 'text-cream/60 hover:text-cream'}`}
               >
                 Line
               </button>
               <button
                 onClick={() => setChartMode('candle')}
-                className={`px-2 py-0.5 rounded-sm text-[10px] font-medium transition-colors ${chartMode === 'candle' ? 'bg-accent text-white' : 'text-cream/50 hover:text-cream'}`}
+                className={`px-2 py-0.5 rounded-sm text-xs font-medium transition-colors ${chartMode === 'candle' ? 'bg-accent text-white' : 'text-cream/60 hover:text-cream'}`}
               >
                 Candle
               </button>
@@ -168,10 +168,10 @@ export default function History() {
           {chartMode === 'line' ? (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={chartData}>
-                <XAxis dataKey="date" tickFormatter={formatDateShort} tick={{ fill: '#2D2A3366', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                <YAxis domain={['auto', 'auto']} tick={{ fill: '#2D2A3366', fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
+                <XAxis dataKey="date" tickFormatter={formatDateShort} tick={{ fill: '#2D2A3366', fontSize: 11 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis domain={['auto', 'auto']} tick={{ fill: '#2D2A3366', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
                 <Tooltip
-                  contentStyle={{ background: '#F0EFEB', border: '1px solid rgba(45,42,51,0.06)', borderRadius: 2, color: '#2D2A33' }}
+                  contentStyle={{ background: '#F0EFEB', border: '1px solid rgba(45,42,51,0.06)', borderRadius: 12, fontSize: 14, color: '#2D2A33' }}
                   labelFormatter={formatDateShort}
                 />
                 {activeGoal && (
@@ -184,10 +184,10 @@ export default function History() {
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <ComposedChart data={candlestickData}>
-                <XAxis dataKey="date" tickFormatter={formatDateShort} tick={{ fill: '#2D2A3366', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                <YAxis domain={candleDomain} tick={{ fill: '#2D2A3366', fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
+                <XAxis dataKey="date" tickFormatter={formatDateShort} tick={{ fill: '#2D2A3366', fontSize: 11 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis domain={candleDomain} tick={{ fill: '#2D2A3366', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
                 <Tooltip
-                  contentStyle={{ background: '#F0EFEB', border: '1px solid rgba(45,42,51,0.06)', borderRadius: 2, color: '#2D2A33' }}
+                  contentStyle={{ background: '#F0EFEB', border: '1px solid rgba(45,42,51,0.06)', borderRadius: 12, fontSize: 14, color: '#2D2A33' }}
                   labelFormatter={formatDateShort}
                   formatter={(value, name, { payload }) => {
                     if (name === 'range') {
@@ -210,24 +210,24 @@ export default function History() {
 
       {/* Stats Panel */}
       {stats && (
-        <div className="grid grid-cols-2 desktop:grid-cols-4 gap-2 mb-4">
-          <div className="bg-surface-mid rounded-sm p-3 border border-black/5 text-center">
-            <p className="text-cream/40 text-[9px] uppercase tracking-wider">Entries</p>
-            <p className="font-display text-lg text-cream">{stats.count}</p>
+        <div className="grid grid-cols-2 desktop:grid-cols-4 gap-2 mb-5">
+          <div className="bg-surface-mid rounded-sm p-4 border border-black/5 text-center shadow-soft">
+            <p className="text-cream/60 text-xs uppercase tracking-wider">Logged</p>
+            <p className="font-display text-xl text-cream">{stats.count}</p>
           </div>
-          <div className="bg-surface-mid rounded-sm p-3 border border-black/5 text-center">
-            <p className="text-cream/40 text-[9px] uppercase tracking-wider">Average</p>
-            <p className="font-display text-lg text-cream">{formatWeight(stats.avg, unit)}</p>
+          <div className="bg-surface-mid rounded-sm p-4 border border-black/5 text-center shadow-soft">
+            <p className="text-cream/60 text-xs uppercase tracking-wider">Average</p>
+            <p className="font-display text-xl text-cream">{formatWeight(stats.avg, unit)}</p>
           </div>
-          <div className="bg-surface-mid rounded-sm p-3 border border-black/5 text-center">
-            <p className="text-cream/40 text-[9px] uppercase tracking-wider">Lowest</p>
-            <p className="font-display text-lg text-success">{formatWeight(stats.lowest.weight, unit)}</p>
-            <p className="text-cream/30 text-[9px]">{formatDateShort(stats.lowest.date)}</p>
+          <div className="bg-surface-mid rounded-sm p-4 border border-black/5 text-center shadow-soft">
+            <p className="text-cream/60 text-xs uppercase tracking-wider">Lowest</p>
+            <p className="font-display text-xl text-success">{formatWeight(stats.lowest.weight, unit)}</p>
+            <p className="text-cream/30 text-xs">{formatDateShort(stats.lowest.date)}</p>
           </div>
-          <div className="bg-surface-mid rounded-sm p-3 border border-black/5 text-center">
-            <p className="text-cream/40 text-[9px] uppercase tracking-wider">Change</p>
+          <div className="bg-surface-mid rounded-sm p-4 border border-black/5 text-center shadow-soft">
+            <p className="text-cream/60 text-xs uppercase tracking-wider">Progress</p>
             {stats.change ? (
-              <p className={`font-display text-lg ${stats.change.change < 0 ? 'text-success' : stats.change.change > 0 ? 'text-danger' : 'text-cream/50'}`}>
+              <p className={`font-display text-xl ${stats.change.change < 0 ? 'text-success' : stats.change.change > 0 ? 'text-danger' : 'text-cream/60'}`}>
                 {stats.change.change > 0 ? '+' : ''}{stats.change.change.toFixed(1)} {unit}
               </p>
             ) : (
@@ -241,12 +241,12 @@ export default function History() {
       <div className="space-y-2">
         {filtered.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-cream/40">No entries in this range</p>
-            <button onClick={() => navigate('log')} className="text-accent text-sm mt-2 hover:underline">Log your first weight</button>
+            <p className="text-cream/60">Nothing here yet — let's change that!</p>
+            <button onClick={() => navigate('log')} className="text-accent text-sm mt-2 hover:underline">Start your journey</button>
           </div>
         )}
         {pagedEntries.map(entry => (
-          <div key={entry.id} className="bg-surface-mid rounded-sm p-3 border border-black/5 group">
+          <div key={entry.id} className="bg-surface-mid rounded-sm p-4 border border-black/5 group shadow-soft hover:border-accent/20 transition-all">
             {editingId === entry.id ? (
               <div className="space-y-2">
                 <div className="flex gap-2 items-center">
@@ -258,7 +258,7 @@ export default function History() {
                     className="flex-1 text-sm py-1.5"
                     autoFocus
                   />
-                  <span className="text-cream/40 text-xs">{unit}</span>
+                  <span className="text-cream/60 text-xs">{unit}</span>
                 </div>
                 <input
                   type="text"
@@ -270,7 +270,7 @@ export default function History() {
                 />
                 <div className="flex gap-2">
                   <button onClick={() => saveEdit(entry.id)} className="text-accent text-xs font-medium">Save</button>
-                  <button onClick={() => setEditingId(null)} className="text-cream/40 text-xs">Cancel</button>
+                  <button onClick={() => setEditingId(null)} className="text-cream/60 text-xs">Cancel</button>
                 </div>
               </div>
             ) : (
@@ -279,11 +279,11 @@ export default function History() {
                   <div className="flex items-baseline gap-2">
                     <span className="text-cream font-semibold">{formatWeight(entry.weight, unit)}</span>
                     {entry.isMorning && (
-                      <span className="text-accent text-[10px] uppercase tracking-wider font-medium">AM</span>
+                      <span className="text-accent text-xs uppercase tracking-wider font-medium">AM</span>
                     )}
-                    <span className="text-cream/40 text-xs">{formatDate(entry.date)}</span>
+                    <span className="text-cream/60 text-xs">{formatDate(entry.date)}</span>
                   </div>
-                  {entry.notes && <p className="text-cream/40 text-xs mt-0.5">{entry.notes}</p>}
+                  {entry.notes && <p className="text-cream/60 text-xs mt-0.5">{entry.notes}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -295,7 +295,7 @@ export default function History() {
                   {confirmDelete === entry.id ? (
                     <div className="flex gap-2">
                       <button onClick={() => handleDelete(entry.id)} className="text-danger text-xs font-medium">Delete</button>
-                      <button onClick={() => setConfirmDelete(null)} className="text-cream/40 text-xs">Cancel</button>
+                      <button onClick={() => setConfirmDelete(null)} className="text-cream/60 text-xs">Cancel</button>
                     </div>
                   ) : (
                     <button
@@ -317,7 +317,7 @@ export default function History() {
             onClick={() => setPage(p => p + 1)}
             className="w-full py-3 text-center text-accent text-sm font-medium hover:bg-surface-mid rounded-sm transition-colors"
           >
-            Load more ({filtered.length - pagedEntries.length} remaining)
+            Show me more ({filtered.length - pagedEntries.length} remaining)
           </button>
         )}
       </div>

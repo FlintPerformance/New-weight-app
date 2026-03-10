@@ -204,10 +204,10 @@ export default function Settings() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-heading text-2xl font-bold text-cream mb-6">Settings</h1>
+      <h1 className="font-heading text-2xl font-bold text-cream mb-6">Your Settings</h1>
 
       {/* Profile */}
-      <div className="bg-surface-mid rounded-sm p-5 border border-black/5 mb-4 shadow-sm">
+      <div className="bg-surface-mid rounded-sm p-5 border border-black/5 mb-5 shadow-card">
         <div className="flex items-center gap-4">
           <Avatar
             url={avatarUrl}
@@ -217,9 +217,9 @@ export default function Settings() {
             onUpload={handleAvatarUpload}
           />
           <div className="flex-1">
-            <p className="text-cream font-medium text-lg">{displayName}</p>
-            <p className="text-cream/40 text-xs">{user.email}</p>
-            <p className="text-cream/30 text-[10px] mt-1">Tap photo to change</p>
+            <p className="text-cream font-medium text-xl">{displayName}</p>
+            <p className="text-cream/50 text-xs">{user.email}</p>
+            <p className="text-cream/50 text-xs mt-1">Tap to update your photo</p>
           </div>
         </div>
       </div>
@@ -227,15 +227,15 @@ export default function Settings() {
       {/* Desktop two-column layout for settings cards */}
       <div className="desktop:grid desktop:grid-cols-2 desktop:gap-4">
         {/* Unit Preference */}
-        <div className="bg-surface-mid rounded-sm p-4 border border-black/5 mb-4 desktop:mb-0 shadow-sm">
-          <p className="text-cream/50 text-xs uppercase tracking-wider mb-3">Weight Unit</p>
+        <div className="bg-surface-mid rounded-sm p-5 border border-black/5 mb-5 desktop:mb-0 shadow-soft">
+          <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">Preferred Unit</p>
           <div className="flex gap-2">
             {['lb', 'kg'].map(u => (
               <button
                 key={u}
                 onClick={() => changeUnit(u)}
                 className={`flex-1 py-2.5 rounded-sm font-semibold text-sm transition-colors ${
-                  unit === u ? 'bg-accent text-white shadow-sm' : 'bg-surface-up text-cream/50 border border-black/10 hover:border-accent/30'
+                  unit === u ? 'bg-accent text-white shadow-sm' : 'bg-surface-up text-cream/60 border border-black/10 hover:border-accent/30'
                 }`}
               >
                 {u === 'lb' ? 'Pounds (lb)' : 'Kilograms (kg)'}
@@ -245,15 +245,15 @@ export default function Settings() {
         </div>
 
         {/* Graph Color */}
-        <div className="bg-surface-mid rounded-sm p-4 border border-black/5 mb-4 desktop:mb-0 shadow-sm">
-          <p className="text-cream/50 text-xs uppercase tracking-wider mb-3">Graph Color</p>
-          <p className="text-cream/30 text-[10px] mb-3">Your line color on circle comparison charts</p>
+        <div className="bg-surface-mid rounded-sm p-5 border border-black/5 mb-5 desktop:mb-0 shadow-soft">
+          <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">Your Chart Color</p>
+          <p className="text-cream/50 text-xs mb-3">Pick your color for charts with friends</p>
           <div className="flex gap-2 flex-wrap">
             {GRAPH_COLORS.map(c => (
               <button
                 key={c.value}
                 onClick={() => handleGraphColorChange(c.value)}
-                className={`w-8 h-8 rounded-full transition-all ${graphColor === c.value ? 'ring-2 ring-cream ring-offset-2 ring-offset-surface-mid scale-110' : 'hover:scale-110'}`}
+                className={`w-9 h-9 rounded-full transition-all ${graphColor === c.value ? 'ring-2 ring-cream ring-offset-2 ring-offset-surface-mid scale-110' : 'hover:scale-110'}`}
                 style={{ backgroundColor: c.value }}
                 title={c.label}
               />
@@ -264,8 +264,8 @@ export default function Settings() {
 
       <div className="desktop:grid desktop:grid-cols-2 desktop:gap-4 mt-0 desktop:mt-4">
         {/* Sync */}
-        <div className="bg-surface-mid rounded-sm p-4 border border-black/5 mb-4 desktop:mb-0 shadow-sm">
-          <p className="text-cream/50 text-xs uppercase tracking-wider mb-3">Cloud Sync</p>
+        <div className="bg-surface-mid rounded-sm p-5 border border-black/5 mb-5 desktop:mb-0 shadow-soft">
+          <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">Stay in Sync</p>
           <button
             onClick={sync}
             disabled={syncing}
@@ -278,15 +278,15 @@ export default function Settings() {
 
       {/* Notifications */}
       {isPushSupported() && (
-        <div className="bg-surface-mid rounded-sm p-5 border border-black/5 mb-4 mt-0 desktop:mt-4 shadow-sm">
+        <div className="bg-surface-mid rounded-sm p-5 border border-black/5 mb-5 mt-0 desktop:mt-4 shadow-soft">
           <div className="flex items-start gap-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-warning mt-0.5 flex-shrink-0">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 01-3.46 0" />
             </svg>
             <div className="flex-1">
-              <h3 className="text-sm font-medium text-cream mb-1">Weight Reminders</h3>
-              <p className="text-xs text-cream/40 mb-3">
+              <h3 className="text-sm font-medium text-cream mb-1">Daily Reminders</h3>
+              <p className="text-xs text-cream/50 mb-3">
                 {pushEnabled
                   ? 'Reminders are active. You will get a daily reminder to log your weight and a weekly progress summary — even when the app is closed.'
                   : 'Get daily reminders to log your weight and weekly progress summaries. Works even when the app is closed.'}
@@ -295,7 +295,7 @@ export default function Settings() {
                 <button
                   onClick={disableNotifications}
                   disabled={pushLoading}
-                  className="px-4 py-2 border border-black/10 text-cream/50 hover:text-cream disabled:opacity-50 text-sm rounded-sm transition-colors"
+                  className="px-4 py-2 border border-black/10 text-cream/60 hover:text-cream disabled:opacity-50 text-sm rounded-sm transition-colors"
                 >
                   {pushLoading ? 'Wait...' : 'Disable Reminders'}
                 </button>
@@ -314,25 +314,25 @@ export default function Settings() {
       )}
 
       {/* Data Management */}
-      <div className="bg-surface-mid rounded-sm p-4 border border-black/5 mb-4 mt-0 desktop:mt-4 shadow-sm">
-        <p className="text-cream/50 text-xs uppercase tracking-wider mb-3">Data</p>
+      <div className="bg-surface-mid rounded-sm p-5 border border-black/5 mb-5 mt-0 desktop:mt-4 shadow-soft">
+        <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">Your Data</p>
         <div className="space-y-2">
           <button onClick={handleExport} className="w-full bg-surface-up border border-black/10 text-cream py-2.5 rounded-sm text-sm hover:border-accent/30 transition-colors">
-            Export Data
+            Back Up My Data
           </button>
           <button onClick={handleImport} className="w-full bg-surface-up border border-black/10 text-cream py-2.5 rounded-sm text-sm hover:border-accent/30 transition-colors">
-            Import Data
+            Restore From Backup
           </button>
           {!confirmClear ? (
             <button onClick={() => setConfirmClear(true)} className="w-full bg-surface-up border border-black/10 text-danger/60 py-2.5 rounded-sm text-sm hover:border-danger/30 transition-colors">
-              Clear All Local Data
+              Start Fresh
             </button>
           ) : (
             <div className="flex gap-2">
               <button onClick={handleClear} className="flex-1 bg-danger text-white py-2.5 rounded-sm text-sm font-semibold">
-                Confirm Clear
+                Yes, Clear Everything
               </button>
-              <button onClick={() => setConfirmClear(false)} className="px-4 text-cream/40 text-sm">Cancel</button>
+              <button onClick={() => setConfirmClear(false)} className="px-4 text-cream/50 text-sm">Cancel</button>
             </div>
           )}
         </div>
@@ -343,10 +343,10 @@ export default function Settings() {
         onClick={signOut}
         className="w-full bg-surface-up border border-black/10 text-cream/60 py-3 rounded-sm font-medium text-sm hover:text-cream hover:border-black/20 transition-colors"
       >
-        Sign Out
+        Log Out
       </button>
 
-      <p className="text-center text-cream/20 text-xs mt-6 mb-4">
+      <p className="text-center text-cream/40 text-xs mt-6 mb-4">
         Steady v1.0.0 · Build {typeof __APP_BUILD__ !== 'undefined' ? __APP_BUILD__ : 'dev'}
       </p>
     </div>

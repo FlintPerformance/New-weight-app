@@ -3,11 +3,11 @@ import { useAppActions } from '../App';
 import { supabase } from '../supabase';
 
 const FEATURES = [
-  { icon: ScaleIcon, text: 'Log daily weigh-ins in seconds' },
-  { icon: ChartIcon, text: 'Visualize trends & moving averages' },
-  { icon: TargetIcon, text: 'Set goals & track progress' },
-  { icon: UsersIcon, text: 'Share progress with your circle' },
-  { icon: SyncIcon, text: 'Sync data across all your devices' }
+  { icon: ScaleIcon, text: 'Quick and easy daily weigh-ins' },
+  { icon: ChartIcon, text: 'Beautiful charts to see your progress' },
+  { icon: TargetIcon, text: 'Set goals and celebrate wins' },
+  { icon: UsersIcon, text: 'Stay motivated with friends' },
+  { icon: SyncIcon, text: 'Your data, everywhere you go' }
 ];
 
 export default function AuthView() {
@@ -43,15 +43,15 @@ export default function AuthView() {
     }
   };
 
-  const heading = mode === 'signup' ? 'Create Your Account' : mode === 'login' ? 'Welcome Back' : 'Reset Password';
+  const heading = mode === 'signup' ? 'Join Steady!' : mode === 'login' ? 'Welcome Back!' : 'Forgot Password?';
 
   return (
     <div className="h-[100dvh] bg-surface flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
         {/* Brand header */}
         <div className="text-center mb-6">
-          <h1 className="font-logo text-5xl font-extrabold text-accent">steady</h1>
-          <p className="text-sm text-muted mt-1.5">Your daily weight companion</p>
+          <h1 className="font-logo text-5xl tracking-tight font-extrabold text-accent">steady</h1>
+          <p className="text-sm text-muted mt-1.5">Your friendly weight companion</p>
         </div>
 
         {/* Feature list - compact */}
@@ -60,7 +60,7 @@ export default function AuthView() {
             {FEATURES.map((f, i) => (
               <div key={i} className="flex items-center gap-1.5">
                 <f.icon />
-                <span className="text-cream/40 text-xs font-body">{f.text}</span>
+                <span className="text-cream/60 text-xs font-body">{f.text}</span>
               </div>
             ))}
           </div>
@@ -75,7 +75,7 @@ export default function AuthView() {
           <div className="text-center">
             <div className="bg-success/10 border border-success/20 rounded-sm p-4 mb-4">
               <p className="text-success text-sm font-medium mb-1">Email sent!</p>
-              <p className="text-cream/50 text-xs">Check your inbox for a password reset link. It may take a minute to arrive.</p>
+              <p className="text-cream/60 text-xs">Check your inbox for a password reset link. It may take a minute to arrive.</p>
             </div>
             <button
               onClick={() => { setMode('login'); setResetSent(false); }}
@@ -86,7 +86,7 @@ export default function AuthView() {
           </div>
         ) : (
           <>
-            <form onSubmit={handleSubmit} className="space-y-2.5">
+            <form onSubmit={handleSubmit} className="space-y-3">
               {mode === 'signup' && (
                 <input
                   type="text"
@@ -124,22 +124,22 @@ export default function AuthView() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-accent hover:bg-accent-dark text-white font-heading font-bold uppercase tracking-wider py-3 rounded-sm transition-colors disabled:opacity-50 text-sm"
+                className="w-full bg-accent hover:bg-accent-dark hover:shadow-glow text-white font-heading font-bold uppercase tracking-wider py-3 rounded-sm transition-colors disabled:opacity-50 text-sm"
               >
-                {loading ? 'Please wait...' : mode === 'reset' ? 'Send Reset Link' : mode === 'login' ? 'Sign In' : 'Sign Up'}
+                {loading ? 'Please wait...' : mode === 'reset' ? 'Send Reset Link' : mode === 'login' ? "Let's Go" : 'Get Started'}
               </button>
             </form>
 
             {mode === 'reset' ? (
-              <p className="text-center mt-4 text-cream/40 text-sm">
+              <p className="text-center mt-4 text-cream/60 text-sm">
                 <button onClick={() => setMode('login')} className="text-accent hover:underline">
                   Back to sign in
                 </button>
               </p>
             ) : (
               <div className="text-center mt-4 space-y-2">
-                <p className="text-cream/40 text-sm">
-                  {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+                <p className="text-cream/60 text-sm">
+                  {mode === 'login' ? 'New here? ' : 'Already a member? '}
                   <button
                     onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
                     className="text-accent hover:underline"
@@ -151,9 +151,9 @@ export default function AuthView() {
                   <p>
                     <button
                       onClick={() => setMode('reset')}
-                      className="text-cream/30 text-xs hover:text-cream/50 transition-colors"
+                      className="text-cream/50 text-xs hover:text-cream/60 transition-colors"
                     >
-                      Forgot your password?
+                      Need help getting in?
                     </button>
                   </p>
                 )}

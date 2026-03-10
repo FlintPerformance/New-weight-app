@@ -34,7 +34,7 @@ export default function LogWeight() {
     setSaving(true);
     try {
       await addWeight(weight, unit, date, sanitizeText(notes), isMorning);
-      showToast('Weight logged!');
+      showToast('Logged! Keep it up!');
       navigate('dashboard');
     } catch {
       showToast('Failed to save', 'error');
@@ -47,12 +47,15 @@ export default function LogWeight() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="font-heading text-xl font-bold text-cream mb-3">Log Weight</h1>
+      <div className="mb-5">
+        <h1 className="font-heading text-2xl font-bold text-cream">Weigh In</h1>
+        <p className="text-cream/50 text-sm mt-1">Every check-in is progress. You got this!</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-2">
+      <form onSubmit={handleSubmit} className="space-y-3">
         {/* Weight Input */}
-        <div className="bg-surface-mid rounded-sm px-4 py-3 border border-black/5 text-center shadow-sm">
-          <label className="block text-cream/50 text-xs uppercase tracking-wider mb-1">Weight ({unit})</label>
+        <div className="bg-surface-mid rounded-sm px-5 py-5 border border-black/5 text-center shadow-card">
+          <label className="block text-cream/60 text-xs font-medium mb-2">Weight ({unit})</label>
           <input
             type="text"
             inputMode="decimal"
@@ -60,21 +63,22 @@ export default function LogWeight() {
             value={weight}
             onChange={e => setWeight(e.target.value)}
             placeholder={lastWeight ? lastWeight.toFixed(1) : '0.0'}
-            className="bg-transparent border-none text-center font-display text-4xl font-bold text-cream w-full focus:ring-0 focus:outline-none"
+            className="bg-transparent border-none text-center font-display text-5xl font-bold text-cream w-full focus:ring-0 focus:outline-none"
           />
           {diff !== null && (
-            <p className={`text-xs mt-1 ${diff < 0 ? 'text-success' : diff > 0 ? 'text-danger' : 'text-cream/40'}`}>
+            <p className={`text-sm font-medium mt-2 ${diff < 0 ? 'text-success' : diff > 0 ? 'text-danger' : 'text-cream/40'}`}>
               {diff > 0 ? '+' : ''}{diff.toFixed(1)} {unit} from last
+              {diff < 0 && ' — nice!'}
             </p>
           )}
         </div>
 
         {/* Weight Slider */}
         {lastWeight && (
-          <div className="bg-surface-mid rounded-sm px-4 py-3 border border-black/5 shadow-sm">
-            <div className="flex justify-between text-xs text-cream/40 mb-1.5">
+          <div className="bg-surface-mid rounded-sm px-5 py-4 border border-black/5 shadow-soft">
+            <div className="flex justify-between text-xs text-cream/50 mb-2">
               <span>{(lastWeight - 3).toFixed(1)}</span>
-              <span className="text-cream/60 font-medium">{weight || lastWeight.toFixed(1)} {unit}</span>
+              <span className="text-cream/70 font-semibold">{weight || lastWeight.toFixed(1)} {unit}</span>
               <span>{(lastWeight + 3).toFixed(1)}</span>
             </div>
             <input
@@ -90,7 +94,7 @@ export default function LogWeight() {
         )}
 
         {/* Morning Weight Toggle */}
-        <div className="bg-surface-mid rounded-sm px-4 py-3 border border-black/5 shadow-sm">
+        <div className="bg-surface-mid rounded-sm px-5 py-4 border border-black/5 shadow-soft">
           <label className="flex items-center gap-3 cursor-pointer select-none">
             <div className="relative">
               <input
@@ -100,23 +104,23 @@ export default function LogWeight() {
                 disabled={hasMorningForDate && !isMorning}
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 bg-surface-up rounded-full border border-black/10 peer-checked:bg-accent peer-checked:border-accent transition-colors" />
-              <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform" />
+              <div className="w-10 h-[22px] bg-surface-up rounded-full border border-black/10 peer-checked:bg-accent peer-checked:border-accent transition-colors" />
+              <div className="absolute top-0.5 left-0.5 w-[18px] h-[18px] bg-white rounded-full shadow peer-checked:translate-x-[18px] transition-transform" />
             </div>
             <div className="flex-1">
-              <span className="text-cream text-sm font-medium">Morning Weight</span>
-              <p className="text-cream/40 text-xs mt-0.5">Used for progress tracking &amp; charts</p>
+              <span className="text-cream text-sm font-semibold">Morning Weight</span>
+              <p className="text-cream/50 text-xs mt-0.5">Best for tracking your true trend</p>
             </div>
             {hasMorningForDate && !isMorning && (
-              <span className="text-accent text-[10px] uppercase tracking-wider">Already logged</span>
+              <span className="text-accent text-xs font-medium">Already logged</span>
             )}
           </label>
         </div>
 
         {/* Date & Notes row */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-surface-mid rounded-sm px-4 py-3 border border-black/5 shadow-sm">
-            <label className="block text-cream/50 text-xs uppercase tracking-wider mb-1.5">Date</label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-surface-mid rounded-sm px-5 py-4 border border-black/5 shadow-soft">
+            <label className="block text-cream/60 text-xs font-medium mb-2">Date</label>
             <input
               type="date"
               value={date}
@@ -125,13 +129,13 @@ export default function LogWeight() {
               className="w-full bg-transparent border-none text-cream text-sm p-0 focus:ring-0 focus:outline-none"
             />
           </div>
-          <div className="bg-surface-mid rounded-sm px-4 py-3 border border-black/5 shadow-sm">
-            <label className="block text-cream/50 text-xs uppercase tracking-wider mb-1.5">Notes</label>
+          <div className="bg-surface-mid rounded-sm px-5 py-4 border border-black/5 shadow-soft">
+            <label className="block text-cream/60 text-xs font-medium mb-2">Notes</label>
             <input
               type="text"
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="Optional"
+              placeholder="How are you feeling?"
               maxLength={200}
               className="w-full bg-transparent border-none text-cream text-sm p-0 focus:ring-0 focus:outline-none placeholder:text-cream/30"
             />
@@ -141,9 +145,9 @@ export default function LogWeight() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-accent hover:bg-accent-dark text-white font-semibold py-3 rounded-sm transition-colors disabled:opacity-50 shadow-sm"
+          className="w-full bg-accent hover:bg-accent-dark text-white font-bold py-3.5 rounded-sm transition-all disabled:opacity-50 shadow-soft hover:shadow-glow active:scale-[0.98] text-base"
         >
-          {saving ? 'Saving...' : 'Save Entry'}
+          {saving ? 'Saving...' : 'Log It!'}
         </button>
       </form>
     </div>

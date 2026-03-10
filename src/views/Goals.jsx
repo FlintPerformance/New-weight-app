@@ -105,11 +105,11 @@ export default function Goals() {
   const milestones = useMemo(() => {
     if (!activeGoal || !progress) return [];
     const items = [
-      { pct: 25, label: '25% there', icon: '🏁' },
-      { pct: 50, label: 'Halfway', icon: '⚡' },
-      { pct: 75, label: '75% there', icon: '🔥' },
-      { pct: 90, label: 'Almost there', icon: '🎯' },
-      { pct: 100, label: 'Goal reached!', icon: '🏆' },
+      { pct: 25, label: 'Quarter way there!', icon: '🏁' },
+      { pct: 50, label: 'Halfway — amazing!', icon: '⚡' },
+      { pct: 75, label: 'Almost there!', icon: '🔥' },
+      { pct: 90, label: 'So close!', icon: '🎯' },
+      { pct: 100, label: 'You did it!', icon: '🏆' },
     ];
 
     // Add weight-based milestones
@@ -201,23 +201,23 @@ export default function Goals() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-heading text-2xl font-bold text-cream mb-6">Goals</h1>
+      <h1 className="font-heading text-2xl font-bold text-cream mb-6">Your Goals</h1>
 
       {activeGoal && progress ? (
         <div className="space-y-4">
           {/* Main Progress Card */}
-          <div className="bg-surface-mid rounded-sm p-5 border border-black/5">
+          <div className="bg-surface-mid rounded-sm p-6 border border-black/5 shadow-card">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-cream/50 text-xs uppercase tracking-wider">Active Goal</p>
+              <p className="text-cream/60 text-xs uppercase tracking-wider">You're Working Toward</p>
               {confirmRemoveId === activeGoal.id ? (
                 <div className="flex gap-2">
                   <button onClick={() => handleRemove(activeGoal.id)} className="text-danger text-xs font-medium">Confirm</button>
-                  <button onClick={() => setConfirmRemoveId(null)} className="text-cream/40 text-xs">Cancel</button>
+                  <button onClick={() => setConfirmRemoveId(null)} className="text-cream/60 text-xs">Cancel</button>
                 </div>
               ) : (
                 <div className="flex gap-3">
                   <button onClick={() => setShowForm(true)} className="text-accent text-xs font-medium">New Goal</button>
-                  <button onClick={() => setConfirmRemoveId(activeGoal.id)} className="text-cream/30 hover:text-danger text-xs">Remove</button>
+                  <button onClick={() => setConfirmRemoveId(activeGoal.id)} className="text-cream/50 hover:text-danger text-xs">Remove</button>
                 </div>
               )}
             </div>
@@ -226,7 +226,7 @@ export default function Goals() {
             <div className="flex items-center gap-6 mb-4">
               <div className="relative w-24 h-24 shrink-0">
                 <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(43,155,143,0.08)" strokeWidth="8" />
                   <circle
                     cx="50" cy="50" r="42" fill="none" stroke="#2B9B8F" strokeWidth="8"
                     strokeLinecap="round"
@@ -244,7 +244,7 @@ export default function Goals() {
                 <p className="text-cream/50 text-sm">
                   Target: {formatWeight(activeGoal.targetWeight, unit)}
                 </p>
-                <p className="text-cream/40 text-xs mt-1">
+                <p className="text-cream/60 text-xs mt-1">
                   {Math.abs(progress.remaining).toFixed(1)} {unit} remaining
                 </p>
               </div>
@@ -253,14 +253,14 @@ export default function Goals() {
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-surface-up rounded-sm p-3">
-                <p className="text-cream/40 text-[10px] uppercase">Started at</p>
+                <p className="text-cream/60 text-xs uppercase">Started at</p>
                 <p className="text-cream font-medium">{formatWeight(activeGoal.startWeight, unit)}</p>
-                <p className="text-cream/30 text-[10px]">{formatDateShort(activeGoal.startDate)}</p>
+                <p className="text-cream/50 text-xs">{formatDateShort(activeGoal.startDate)}</p>
               </div>
               <div className="bg-surface-up rounded-sm p-3">
-                <p className="text-cream/40 text-[10px] uppercase">Current</p>
+                <p className="text-cream/60 text-xs uppercase">Current</p>
                 <p className="text-cream font-medium">{latest ? formatWeight(latest.weight, unit) : '—'}</p>
-                <p className="text-cream/30 text-[10px]">{latest ? formatDateShort(latest.date) : ''}</p>
+                <p className="text-cream/50 text-xs">{latest ? formatDateShort(latest.date) : ''}</p>
               </div>
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function Goals() {
             <div className="bg-surface-mid rounded-sm p-4 border border-black/5">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-cream/50 text-xs uppercase tracking-wider">Timeline</p>
-                <p className="text-cream/40 text-[10px]">
+                <p className="text-cream/60 text-xs">
                   {progress.daysLeft} days remaining
                 </p>
               </div>
@@ -283,9 +283,9 @@ export default function Goals() {
                 </div>
                 {/* Markers */}
                 <div className="flex justify-between mt-1.5">
-                  <span className="text-cream/30 text-[9px]">{formatDateShort(activeGoal.startDate)}</span>
-                  <span className="text-cream/50 text-[9px] font-medium">Today</span>
-                  <span className="text-cream/30 text-[9px]">{formatDateShort(activeGoal.targetDate)}</span>
+                  <span className="text-cream/50 text-xs">{formatDateShort(activeGoal.startDate)}</span>
+                  <span className="text-cream/50 text-xs font-medium">Today</span>
+                  <span className="text-cream/50 text-xs">{formatDateShort(activeGoal.targetDate)}</span>
                 </div>
               </div>
             </div>
@@ -296,18 +296,18 @@ export default function Goals() {
             <p className="text-cream/50 text-xs uppercase tracking-wider mb-3">Pace</p>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div className="bg-surface-up rounded-sm p-3">
-                <p className="text-cream/40 text-[10px] uppercase">Your Rate</p>
+                <p className="text-cream/60 text-xs uppercase">Your Rate</p>
                 <p className="font-display text-xl text-cream">
                   {progress.ratePerWeek.toFixed(1)}
                 </p>
-                <p className="text-cream/30 text-[10px]">{unit}/week</p>
+                <p className="text-cream/50 text-xs">{unit}/week</p>
               </div>
               <div className="bg-surface-up rounded-sm p-3">
-                <p className="text-cream/40 text-[10px] uppercase">Needed Rate</p>
+                <p className="text-cream/60 text-xs uppercase">Needed Rate</p>
                 <p className="font-display text-xl text-cream">
                   {progress.neededRatePerWeek.toFixed(1)}
                 </p>
-                <p className="text-cream/30 text-[10px]">{unit}/week</p>
+                <p className="text-cream/50 text-xs">{unit}/week</p>
               </div>
             </div>
             <div className={`rounded-sm px-3 py-2 text-xs font-medium ${
@@ -315,9 +315,9 @@ export default function Goals() {
               progress.paceStatus === 'behind' ? 'bg-danger/10 text-danger border border-danger/20' :
               'bg-accent/10 text-accent border border-accent/20'
             }`}>
-              {progress.paceStatus === 'ahead' && `Ahead of pace — you're ${progress.direction === 'lose' ? 'losing' : 'gaining'} faster than needed`}
-              {progress.paceStatus === 'on_track' && `On track — keep up this rate to hit your goal`}
-              {progress.paceStatus === 'behind' && `Behind pace — you need to ${progress.direction === 'lose' ? 'lose' : 'gain'} ${progress.neededRatePerWeek.toFixed(1)} ${unit}/week`}
+              {progress.paceStatus === 'ahead' && `You're crushing it — ahead of pace!`}
+              {progress.paceStatus === 'on_track' && `Right on track — you're doing amazing!`}
+              {progress.paceStatus === 'behind' && `Let's pick up the pace — you've got this!`}
             </div>
           </div>
 
@@ -332,10 +332,10 @@ export default function Goals() {
                 targetWeight={activeGoal.targetWeight}
               />
               <div className="flex gap-4 mt-2 justify-center">
-                <span className="flex items-center gap-1 text-[10px] text-cream/40">
+                <span className="flex items-center gap-1 text-xs text-cream/60">
                   <span className="w-3 h-0.5 bg-accent rounded" /> Actual
                 </span>
-                <span className="flex items-center gap-1 text-[10px] text-cream/40">
+                <span className="flex items-center gap-1 text-xs text-cream/60">
                   <span className="w-3 h-0.5 bg-cream/20 rounded border-dashed" /> Ideal
                 </span>
               </div>
@@ -351,11 +351,11 @@ export default function Goals() {
                   m.reached ? 'bg-success/5' : 'bg-black/[0.02]'
                 }`}>
                   <span className={`text-base ${m.reached ? '' : 'grayscale opacity-40'}`}>{m.icon}</span>
-                  <span className={`text-sm flex-1 ${m.reached ? 'text-cream' : 'text-cream/30'}`}>{m.label}</span>
+                  <span className={`text-sm flex-1 ${m.reached ? 'text-cream' : 'text-cream/50'}`}>{m.label}</span>
                   {m.reached ? (
-                    <span className="text-success text-[10px] font-medium">Done</span>
+                    <span className="text-success text-xs font-medium">Done</span>
                   ) : (
-                    <span className="text-cream/20 text-[10px]">{m.pct}%</span>
+                    <span className="text-cream/50 text-xs">{m.pct}%</span>
                   )}
                 </div>
               ))}
@@ -373,8 +373,8 @@ export default function Goals() {
                     wt.isPast ? (wt.hit ? 'bg-success/5' : 'bg-black/[0.02]') :
                     'bg-black/[0.02]'
                   }`}>
-                    <span className={`text-[10px] font-medium w-10 shrink-0 ${
-                      wt.isCurrent ? 'text-accent' : 'text-cream/30'
+                    <span className={`text-xs font-medium w-10 shrink-0 ${
+                      wt.isCurrent ? 'text-accent' : 'text-cream/50'
                     }`}>
                       Wk {wt.week}
                     </span>
@@ -386,16 +386,16 @@ export default function Goals() {
                         {formatWeight(wt.actual, unit)}
                       </span>
                     )}
-                    <span className="text-cream/20 text-[9px] w-14 text-right shrink-0">
+                    <span className="text-cream/50 text-xs w-14 text-right shrink-0">
                       {formatDateShort(wt.date)}
                     </span>
                     {wt.isPast && (
-                      <span className={`text-[10px] w-4 text-center ${wt.hit ? 'text-success' : 'text-danger'}`}>
+                      <span className={`text-xs w-4 text-center ${wt.hit ? 'text-success' : 'text-danger'}`}>
                         {wt.actual !== null ? (wt.hit ? '✓' : '✗') : '—'}
                       </span>
                     )}
                     {wt.isCurrent && (
-                      <span className="text-accent text-[10px] font-medium w-4 text-center">→</span>
+                      <span className="text-accent text-xs font-medium w-4 text-center">→</span>
                     )}
                     {!wt.isPast && !wt.isCurrent && (
                       <span className="w-4" />
@@ -412,21 +412,21 @@ export default function Goals() {
               <p className="text-cream/50 text-xs uppercase tracking-wider mb-3">Consistency</p>
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-surface-up rounded-sm p-3 text-center">
-                  <p className="text-cream/40 text-[10px] uppercase">Days Logged</p>
+                  <p className="text-cream/60 text-xs uppercase">Days Active</p>
                   <p className="font-display text-xl text-cream">{consistency.uniqueDays}</p>
-                  <p className="text-cream/30 text-[10px]">of {consistency.daysActive}</p>
+                  <p className="text-cream/50 text-xs">of {consistency.daysActive}</p>
                 </div>
                 <div className="bg-surface-up rounded-sm p-3 text-center">
-                  <p className="text-cream/40 text-[10px] uppercase">Log Rate</p>
+                  <p className="text-cream/60 text-xs uppercase">Consistency</p>
                   <p className={`font-display text-xl ${
                     consistency.pct >= 80 ? 'text-success' : consistency.pct >= 50 ? 'text-warning' : 'text-danger'
                   }`}>{consistency.pct}%</p>
-                  <p className="text-cream/30 text-[10px]">consistency</p>
+                  <p className="text-cream/50 text-xs">consistency</p>
                 </div>
                 <div className="bg-surface-up rounded-sm p-3 text-center">
-                  <p className="text-cream/40 text-[10px] uppercase">This Week</p>
+                  <p className="text-cream/60 text-xs uppercase">This Week's Logs</p>
                   <p className="font-display text-xl text-cream">{consistency.thisWeekLogs}</p>
-                  <p className="text-cream/30 text-[10px]">of {consistency.dayOfWeek} days</p>
+                  <p className="text-cream/50 text-xs">of {consistency.dayOfWeek} days</p>
                 </div>
               </div>
             </div>
@@ -434,13 +434,13 @@ export default function Goals() {
         </div>
       ) : (
         <div className="bg-surface-mid rounded-sm p-6 border border-black/5 text-center mb-4">
-          <p className="text-cream/50 mb-3">No active goal</p>
+          <p className="text-cream/60 text-lg mb-3">Ready to set a target? Let's do it!</p>
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
-              className="bg-accent hover:bg-accent-dark text-white px-5 py-2.5 rounded-sm font-semibold text-sm transition-colors"
+              className="bg-accent hover:bg-accent-dark text-white px-6 py-3 rounded-sm font-bold text-sm transition-all hover:shadow-glow active:scale-[0.98]"
             >
-              Set a Goal
+              Let's Go!
             </button>
           )}
         </div>
@@ -449,7 +449,7 @@ export default function Goals() {
       {/* Create Goal Form */}
       {showForm && (
         <form onSubmit={handleCreate} className="bg-surface-mid rounded-sm p-5 border border-black/5 space-y-4 mt-4">
-          <h2 className="font-heading text-lg font-semibold text-cream">New Goal</h2>
+          <h2 className="font-heading text-lg font-semibold text-cream">Set Your Target</h2>
           {activeGoal && (
             <p className="text-warning/80 text-xs bg-warning/10 border border-warning/20 rounded-sm px-3 py-2">
               Setting a new goal will move your current goal to history.
@@ -479,10 +479,10 @@ export default function Goals() {
             />
           </div>
           <div className="flex gap-3">
-            <button type="submit" className="flex-1 bg-accent hover:bg-accent-dark text-white font-semibold py-2.5 rounded-sm transition-colors">
-              Set Goal
+            <button type="submit" className="flex-1 bg-accent hover:bg-accent-dark text-white font-bold py-3 rounded-sm transition-all hover:shadow-glow active:scale-[0.98]">
+              Let's Do This!
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 text-cream/40 hover:text-cream text-sm">
+            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 text-cream/60 hover:text-cream text-sm">
               Cancel
             </button>
           </div>
@@ -492,21 +492,21 @@ export default function Goals() {
       {/* Past Goals */}
       {goals.filter(g => !g.active).length > 0 && (
         <div className="mt-6">
-          <p className="text-cream/40 text-xs uppercase tracking-wider mb-3">Past Goals</p>
+          <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">Past Goals</p>
           <div className="space-y-2">
             {goals.filter(g => !g.active).map(g => (
               <div key={g.id} className="bg-surface-up rounded-sm p-3 border border-black/5 flex justify-between items-center">
                 <div>
                   <p className="text-cream/60 text-sm">Target: {formatWeight(g.targetWeight, unit)}</p>
-                  <p className="text-cream/30 text-xs">From {formatWeight(g.startWeight, unit)}</p>
+                  <p className="text-cream/50 text-xs">From {formatWeight(g.startWeight, unit)}</p>
                 </div>
                 {confirmRemoveId === g.id ? (
                   <div className="flex gap-2">
                     <button onClick={() => handleRemove(g.id)} className="text-danger text-xs font-medium">Confirm</button>
-                    <button onClick={() => setConfirmRemoveId(null)} className="text-cream/40 text-xs">Cancel</button>
+                    <button onClick={() => setConfirmRemoveId(null)} className="text-cream/60 text-xs">Cancel</button>
                   </div>
                 ) : (
-                  <button onClick={() => setConfirmRemoveId(g.id)} className="text-cream/20 hover:text-danger text-xs">Remove</button>
+                  <button onClick={() => setConfirmRemoveId(g.id)} className="text-cream/50 hover:text-danger text-xs">Remove</button>
                 )}
               </div>
             ))}

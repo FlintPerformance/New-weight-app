@@ -2,11 +2,11 @@ import React from 'react';
 import { useAppData, useAppActions } from '../App';
 
 const NAV = [
-  { id: 'dashboard', label: 'Home', Icon: DashboardIcon },
-  { id: 'log', label: 'Log', Icon: PlusIcon },
-  { id: 'history', label: 'History', Icon: ChartIcon },
+  { id: 'dashboard', label: 'Today', Icon: DashboardIcon },
+  { id: 'log', label: 'Weigh In', Icon: PlusIcon },
+  { id: 'history', label: 'Journey', Icon: ChartIcon },
   { id: 'goals', label: 'Goals', Icon: TargetIcon },
-  { id: 'circle', label: 'Circle', Icon: UsersIcon },
+  { id: 'circle', label: 'Friends', Icon: UsersIcon },
 ];
 
 export default function Layout({ children }) {
@@ -16,24 +16,24 @@ export default function Layout({ children }) {
   return (
     <div className="fixed top-0 left-0 right-0 bottom-0 h-[100dvh] flex flex-col desktop:flex-row bg-surface overscroll-none touch-manipulation">
       {/* Desktop Sidebar */}
-      <aside className="hidden desktop:flex desktop:flex-col desktop:w-56 desktop:shrink-0 bg-surface-mid border-r border-black/[0.06] z-40 shadow-sm">
-        <div className="p-5 border-b border-black/[0.06]">
+      <aside className="hidden desktop:flex desktop:flex-col desktop:w-60 desktop:shrink-0 bg-surface-mid border-r border-black/[0.06] z-40 shadow-soft">
+        <div className="p-6 border-b border-black/[0.06]">
           <span className="font-logo text-2xl font-extrabold text-accent" aria-label="Steady">
             steady
           </span>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted mt-1" aria-hidden="true">Weight Tracker</p>
+          <p className="text-xs text-muted mt-1.5" aria-hidden="true">Your weight, your way</p>
         </div>
-        <nav className="flex-1 py-4" aria-label="Primary">
+        <nav className="flex-1 py-3" aria-label="Primary">
           {NAV.map(({ id, label, Icon }) => (
             <button
               key={id}
               onClick={() => navigate(id)}
               aria-current={view === id ? 'page' : undefined}
-              className={`w-full flex items-center gap-3 px-5 py-2.5 text-sm transition-colors ${
-                view === id ? 'text-accent bg-accent/[0.08] font-semibold' : 'text-muted hover:text-cream hover:bg-black/[0.03]'
+              className={`w-full flex items-center gap-3 px-6 py-3 text-sm transition-all ${
+                view === id ? 'text-accent bg-accent/[0.08] font-semibold border-r-2 border-accent' : 'text-cream/60 hover:text-cream hover:bg-black/[0.03]'
               }`}
             >
-              <Icon className="w-[18px] h-[18px]" />
+              <Icon className="w-5 h-5" />
               {label}
             </button>
           ))}
@@ -42,19 +42,19 @@ export default function Layout({ children }) {
           <button
             onClick={() => navigate('settings')}
             aria-current={view === 'settings' ? 'page' : undefined}
-            className={`w-full flex items-center gap-3 px-5 py-3 text-sm transition-colors ${
-              view === 'settings' ? 'text-accent bg-accent/[0.08] font-semibold' : 'text-muted hover:text-cream hover:bg-black/[0.03]'
+            className={`w-full flex items-center gap-3 px-6 py-3.5 text-sm transition-all ${
+              view === 'settings' ? 'text-accent bg-accent/[0.08] font-semibold' : 'text-cream/60 hover:text-cream hover:bg-black/[0.03]'
             }`}
           >
-            <GearIcon className="w-[18px] h-[18px]" />
+            <GearIcon className="w-5 h-5" />
             Settings
           </button>
         </div>
       </aside>
 
       {/* Mobile Header */}
-      <header className="desktop:hidden shrink-0 bg-surface-mid border-b border-black/[0.06] safe-top shadow-sm">
-        <div className="flex items-center justify-between px-4 h-11">
+      <header className="desktop:hidden shrink-0 bg-surface-mid border-b border-black/[0.06] safe-top shadow-soft">
+        <div className="flex items-center justify-between px-5 h-12">
           <span className="font-logo text-xl font-extrabold text-accent" aria-label="Steady">
             steady
           </span>
@@ -62,7 +62,7 @@ export default function Layout({ children }) {
             onClick={() => navigate('settings')}
             aria-label="Settings"
             aria-current={view === 'settings' ? 'page' : undefined}
-            className={`p-2 -mr-1 transition-colors ${view === 'settings' ? 'text-accent' : 'text-muted hover:text-cream'}`}
+            className={`p-2 -mr-1 transition-colors rounded-full ${view === 'settings' ? 'text-accent bg-accent/10' : 'text-cream/50 hover:text-cream'}`}
           >
             <GearIcon className="w-5 h-5" />
           </button>
@@ -71,29 +71,29 @@ export default function Layout({ children }) {
 
       {/* Main Content */}
       <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-surface">
-        <div className="max-w-[1400px] mx-auto px-4 desktop:px-8 py-4 desktop:py-6">
+        <div className="max-w-[1400px] mx-auto px-5 desktop:px-8 py-5 desktop:py-6">
           {children}
         </div>
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="desktop:hidden shrink-0 bg-surface-mid border-t border-black/[0.06] nav-extend-bottom shadow-[0_-1px_3px_rgba(0,0,0,0.05)]" aria-label="Primary">
-        <div className="flex" style={{ height: '50px' }}>
+      <nav className="desktop:hidden shrink-0 bg-surface-mid border-t border-black/[0.06] nav-extend-bottom shadow-[0_-2px_8px_rgba(0,0,0,0.04)]" aria-label="Primary">
+        <div className="flex" style={{ height: '56px' }}>
           {NAV.map(({ id, label, Icon }) => (
             <button
               key={id}
               onClick={() => navigate(id)}
               aria-label={label}
               aria-current={view === id ? 'page' : undefined}
-              className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 leading-none transition-colors min-h-[44px] ${
-                view === id ? 'text-accent' : 'text-muted'
+              className={`relative flex-1 flex flex-col items-center justify-center gap-1 leading-none transition-all min-h-[48px] ${
+                view === id ? 'text-accent' : 'text-cream/40'
               }`}
             >
               {view === id && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-accent rounded-full" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-accent rounded-full" />
               )}
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px]">{label}</span>
+              <Icon className={`w-5 h-5 transition-transform ${view === id ? 'scale-110' : ''}`} />
+              <span className={`text-[11px] ${view === id ? 'font-semibold' : ''}`}>{label}</span>
             </button>
           ))}
         </div>

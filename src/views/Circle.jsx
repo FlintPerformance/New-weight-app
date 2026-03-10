@@ -569,7 +569,7 @@ export default function Circle() {
     return (
       <div className="max-w-3xl">
         <h1 className="font-heading text-2xl font-bold text-cream mb-6">My Circle</h1>
-        <div className="text-cream/40 text-center py-12 animate-pulse-accent">Loading circles...</div>
+        <div className="text-cream/60 text-center py-12 animate-pulse-accent">Loading circles...</div>
       </div>
     );
   }
@@ -580,13 +580,13 @@ export default function Circle() {
         <h1 className="font-heading text-2xl font-bold text-cream">My Circle</h1>
         <div className="flex gap-2">
           {circles.length > 0 && (
-            <button onClick={() => setShowCircleInfo(!showCircleInfo)} className="text-cream/40 hover:text-cream text-xs transition-colors">
+            <button onClick={() => setShowCircleInfo(!showCircleInfo)} className="text-cream/60 hover:text-cream text-xs transition-colors">
               {showCircleInfo ? 'Hide info' : 'Manage'}
             </button>
           )}
           <button onClick={() => { setShowJoin(true); setShowCreate(false); }} className="text-accent text-xs font-medium hover:underline">Join</button>
           <button onClick={() => { setShowCreate(true); setShowJoin(false); }} className="bg-accent hover:bg-accent-dark text-white px-3 py-1.5 rounded-sm text-xs font-semibold transition-colors">
-            + Create
+            + Start
           </button>
         </div>
       </div>
@@ -597,7 +597,7 @@ export default function Circle() {
           {circles.map(circle => {
             const circleMembers = members.filter(m => m.circle_id === circle.id);
             return (
-              <div key={circle.id} className="bg-surface-mid rounded-sm p-3 border border-black/5 flex items-center justify-between">
+              <div key={circle.id} className="bg-surface-mid rounded-sm p-4 border border-black/5 shadow-soft flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex -space-x-1.5">
                     {circleMembers.slice(0, 4).map(m => (
@@ -606,7 +606,7 @@ export default function Circle() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-cream text-sm font-medium truncate">{circle.name}</p>
-                    <p className="text-cream/30 text-[10px]">{circleMembers.length} members · Code: {circle.invite_code}</p>
+                    <p className="text-cream/50 text-xs">{circleMembers.length} members · Code: {circle.invite_code}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -615,17 +615,17 @@ export default function Circle() {
                       navigator.clipboard.writeText(`${window.location.origin}?join=${circle.invite_code}`);
                       showToast('Invite link copied!');
                     }}
-                    className="text-accent text-[10px] hover:underline"
+                    className="text-accent text-xs hover:underline"
                   >
                     Copy link
                   </button>
                   {confirmLeaveId === circle.id ? (
                     <span className="flex gap-1.5">
-                      <button onClick={() => leaveCircle(circle.id)} className="text-danger text-[10px] font-medium">Confirm</button>
-                      <button onClick={() => setConfirmLeaveId(null)} className="text-cream/30 text-[10px]">Cancel</button>
+                      <button onClick={() => leaveCircle(circle.id)} className="text-danger text-xs font-medium">Confirm</button>
+                      <button onClick={() => setConfirmLeaveId(null)} className="text-cream/50 text-xs">Cancel</button>
                     </span>
                   ) : (
-                    <button onClick={() => setConfirmLeaveId(circle.id)} className="text-cream/20 hover:text-danger text-[10px]">Leave</button>
+                    <button onClick={() => setConfirmLeaveId(circle.id)} className="text-cream/40 hover:text-danger text-xs">Leave Circle</button>
                   )}
                 </div>
               </div>
@@ -636,39 +636,39 @@ export default function Circle() {
 
       {/* Create Circle Form */}
       {showCreate && (
-        <form onSubmit={createCircle} className="bg-surface-mid rounded-sm p-4 border border-black/5 mb-4 animate-slide-up">
-          <p className="text-cream text-sm font-medium mb-3">Create a Circle</p>
+        <form onSubmit={createCircle} className="bg-surface-mid rounded-sm p-5 border border-black/5 shadow-soft mb-4 animate-slide-up">
+          <p className="text-cream text-sm font-medium mb-3">Start a Circle</p>
           <input type="text" value={circleName} onChange={e => setCircleName(e.target.value)}
             placeholder="Circle name (e.g. Gym Buddies)" className="w-full mb-3" autoFocus />
           <div className="flex gap-2">
             <button type="submit" className="bg-accent text-white px-4 py-2 rounded-sm text-sm font-semibold">Create</button>
-            <button type="button" onClick={() => setShowCreate(false)} className="text-cream/40 text-sm">Cancel</button>
+            <button type="button" onClick={() => setShowCreate(false)} className="text-cream/60 text-sm">Cancel</button>
           </div>
         </form>
       )}
 
       {/* Join Circle Form */}
       {showJoin && (
-        <form onSubmit={joinCircle} className="bg-surface-mid rounded-sm p-4 border border-black/5 mb-4 animate-slide-up">
-          <p className="text-cream text-sm font-medium mb-3">Join a Circle</p>
+        <form onSubmit={joinCircle} className="bg-surface-mid rounded-sm p-5 border border-black/5 shadow-soft mb-4 animate-slide-up">
+          <p className="text-cream text-sm font-medium mb-3">Join Friends</p>
           <input type="text" value={joinCode} onChange={e => setJoinCode(e.target.value)}
             placeholder="Enter 6-character invite code" maxLength={6}
             className="w-full mb-3 uppercase tracking-widest text-center font-mono" autoFocus />
           <div className="flex gap-2">
             <button type="submit" className="bg-accent text-white px-4 py-2 rounded-sm text-sm font-semibold">Join</button>
-            <button type="button" onClick={() => setShowJoin(false)} className="text-cream/40 text-sm">Cancel</button>
+            <button type="button" onClick={() => setShowJoin(false)} className="text-cream/60 text-sm">Cancel</button>
           </div>
         </form>
       )}
 
       {circles.length === 0 && !showCreate && !showJoin ? (
-        <div className="bg-surface-mid rounded-sm p-8 border border-black/5 text-center">
+        <div className="bg-surface-mid rounded-sm p-8 border border-black/5 shadow-soft text-center">
           <div className="text-4xl mb-3">👥</div>
           <p className="text-cream font-medium mb-1">No circles yet</p>
-          <p className="text-cream/40 text-sm mb-4">Create a circle and invite friends to share progress and stay accountable together.</p>
+          <p className="text-cream/60 text-sm mb-4">Create a circle and invite friends to share progress and stay accountable together.</p>
           <div className="flex gap-3 justify-center">
-            <button onClick={() => setShowCreate(true)} className="bg-accent hover:bg-accent-dark text-white px-5 py-2.5 rounded-sm font-semibold text-sm transition-colors">Create Circle</button>
-            <button onClick={() => setShowJoin(true)} className="bg-surface-up border border-black/10 text-cream px-5 py-2.5 rounded-sm font-semibold text-sm transition-colors hover:border-accent/30">Join Circle</button>
+            <button onClick={() => setShowCreate(true)} className="bg-accent hover:bg-accent-dark text-white px-5 py-2.5 rounded-sm font-semibold text-sm transition-colors">Start a Circle</button>
+            <button onClick={() => setShowJoin(true)} className="bg-surface-up border border-black/10 text-cream px-5 py-2.5 rounded-sm font-semibold text-sm transition-colors hover:border-accent/30">Join Friends</button>
           </div>
         </div>
       ) : (
@@ -690,7 +690,7 @@ export default function Circle() {
 
           {/* Tab Bar */}
           <div className="flex gap-1 bg-surface-up rounded-sm p-0.5 mb-4">
-            {[['feed', 'Feed'], ['predictions', 'Predictions'], ['members', 'Members'], ['compare', 'Compare']].map(([id, label]) => (
+            {[['feed', 'Feed'], ['predictions', 'Bets'], ['members', 'Squad'], ['compare', 'Compare']].map(([id, label]) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
@@ -707,7 +707,7 @@ export default function Circle() {
           {tab === 'feed' && (
             <div className="space-y-3 desktop:grid desktop:grid-cols-2 desktop:gap-3 desktop:space-y-0">
               {feedWithBadges.length === 0 ? (
-                <p className="text-cream/40 text-center py-8 text-sm desktop:col-span-2">No entries shared yet. Log your weight and it will appear here!</p>
+                <p className="text-cream/60 text-center py-8 text-sm desktop:col-span-2">Nothing here yet — be the first to log!</p>
               ) : (
                 feedWithBadges.slice(0, feedPage * FEED_PAGE_SIZE).map(entry => {
                   const entryReactions = reactions[entry.id] || [];
@@ -726,7 +726,7 @@ export default function Circle() {
                             <p className="text-cream text-sm font-medium">
                               {entry.isOwn ? 'You' : entry.displayName}
                             </p>
-                            <p className="text-cream/30 text-[10px]">{formatDateShort(entry.date)}</p>
+                            <p className="text-cream/50 text-xs">{formatDateShort(entry.date)}</p>
                           </div>
                         </div>
                         <span className="font-display text-2xl text-cream">
@@ -738,7 +738,7 @@ export default function Circle() {
                       {entry.badges.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-2">
                           {entry.badges.map((b, i) => (
-                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 text-[10px] text-warning font-medium">
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 text-xs text-warning font-medium">
                               <span>{b.icon}</span> {b.text}
                             </span>
                           ))}
@@ -762,7 +762,7 @@ export default function Circle() {
                               }`}
                             >
                               <span>{emoji}</span>
-                              <span className={hasReacted ? 'text-accent' : 'text-cream/40'}>{userIds.length}</span>
+                              <span className={hasReacted ? 'text-accent' : 'text-cream/60'}>{userIds.length}</span>
                             </button>
                           );
                         })}
@@ -770,7 +770,7 @@ export default function Circle() {
                         <div className="relative">
                           <button
                             onClick={() => setShowReactionPicker(showReactionPicker === entry.id ? null : entry.id)}
-                            className="w-7 h-7 rounded-full bg-black/5 border border-black/5 flex items-center justify-center text-cream/30 hover:text-cream/60 hover:border-accent/20 transition-colors text-sm"
+                            className="w-7 h-7 rounded-full bg-black/5 border border-black/5 flex items-center justify-center text-cream/50 hover:text-cream/60 hover:border-accent/20 transition-colors text-sm"
                           >
                             +
                           </button>
@@ -814,22 +814,22 @@ export default function Circle() {
                   onClick={() => setShowNewPrediction(true)}
                   className="w-full bg-surface-mid hover:bg-surface-up border border-dashed border-accent/30 rounded-sm p-4 text-center transition-colors"
                 >
-                  <p className="text-accent font-semibold text-sm">Call Your Shot</p>
-                  <p className="text-cream/40 text-xs mt-0.5">Lock in a weight prediction for your circle</p>
+                  <p className="text-accent font-semibold text-sm">Make a Prediction</p>
+                  <p className="text-cream/60 text-xs mt-0.5">Lock in a weight prediction for your circle</p>
                 </button>
               )}
 
               {hasActivePrediction && !showNewPrediction && (
-                <p className="text-cream/30 text-xs text-center py-1">You have an active prediction — resolve it before making another.</p>
+                <p className="text-cream/50 text-xs text-center py-1">You have an active prediction — resolve it before making another.</p>
               )}
 
               {/* Create Prediction Form */}
               {showNewPrediction && (
-                <div className="bg-surface-mid rounded-sm p-4 border border-accent/20 animate-slide-up">
-                  <p className="text-cream font-medium text-sm mb-3">Call Your Shot</p>
+                <div className="bg-surface-mid rounded-sm p-5 border border-accent/20 animate-slide-up">
+                  <p className="text-cream font-medium text-sm mb-3">Make a Prediction</p>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-cream/40 text-[10px] uppercase tracking-wider block mb-1">I'll be at</label>
+                      <label className="text-cream/60 text-xs uppercase tracking-wider block mb-1">I'll be at</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="number"
@@ -844,7 +844,7 @@ export default function Circle() {
                       </div>
                     </div>
                     <div>
-                      <label className="text-cream/40 text-[10px] uppercase tracking-wider block mb-1">By</label>
+                      <label className="text-cream/60 text-xs uppercase tracking-wider block mb-1">By</label>
                       <div className="flex gap-1 bg-surface-up rounded-sm p-0.5">
                         {[['14', '2 weeks'], ['30', '30 days'], ['60', '60 days'], ['90', '90 days']].map(([val, label]) => (
                           <button
@@ -860,7 +860,7 @@ export default function Circle() {
                       </div>
                     </div>
                     <div>
-                      <label className="text-cream/40 text-[10px] uppercase tracking-wider block mb-1">Message (optional)</label>
+                      <label className="text-cream/60 text-xs uppercase tracking-wider block mb-1">Message (optional)</label>
                       <input
                         type="text"
                         value={predictionMessage}
@@ -874,7 +874,7 @@ export default function Circle() {
                       <button onClick={createPrediction} className="bg-accent hover:bg-accent-dark text-white px-4 py-2 rounded-sm text-sm font-semibold transition-colors">
                         Lock It In
                       </button>
-                      <button onClick={() => setShowNewPrediction(false)} className="text-cream/40 text-sm">Cancel</button>
+                      <button onClick={() => setShowNewPrediction(false)} className="text-cream/60 text-sm">Cancel</button>
                     </div>
                   </div>
                 </div>
@@ -883,7 +883,7 @@ export default function Circle() {
               {/* Active Predictions */}
               {filteredPredictions.filter(p => p.status === 'active').length > 0 && (
                 <div>
-                  <p className="text-cream/40 text-[10px] uppercase tracking-wider mb-2">Active</p>
+                  <p className="text-cream/60 text-xs uppercase tracking-wider mb-2">Active</p>
                   <div className="space-y-3">
                     {filteredPredictions.filter(p => p.status === 'active').map(pred => {
                       const profile = members.find(m => m.user_id === pred.user_id)?.profiles;
@@ -906,12 +906,12 @@ export default function Circle() {
                                   <p className="text-cream text-sm font-medium">
                                     {isOwn ? 'You' : profile?.display_name || 'Unknown'}
                                   </p>
-                                  <p className="text-cream/30 text-[10px]">{formatDateShort(pred.created_at?.slice(0, 10))}</p>
+                                  <p className="text-cream/50 text-xs">{formatDateShort(pred.created_at?.slice(0, 10))}</p>
                                 </div>
                               </div>
                               <div className="text-right">
                                 <p className="font-display text-xl text-cream">{formatWeight(pred.predicted_weight, pred.unit)}</p>
-                                <p className="text-cream/30 text-[10px]">from {formatWeight(pred.start_weight, pred.unit)} ({direction}{diff})</p>
+                                <p className="text-cream/50 text-xs">from {formatWeight(pred.start_weight, pred.unit)} ({direction}{diff})</p>
                               </div>
                             </div>
 
@@ -921,7 +921,7 @@ export default function Circle() {
 
                             {/* Progress bar */}
                             <div className="mb-3">
-                              <div className="flex justify-between text-[10px] text-cream/30 mb-1">
+                              <div className="flex justify-between text-xs text-cream/50 mb-1">
                                 <span>{daysLeft} days left</span>
                                 <span>Due {formatDateShort(pred.deadline)}</span>
                               </div>
@@ -936,7 +936,7 @@ export default function Circle() {
                             {/* Voting (can't vote on own prediction) */}
                             {!isOwn && (
                               <div>
-                                <p className="text-cream/40 text-[10px] uppercase tracking-wider mb-2">What do you think?</p>
+                                <p className="text-cream/60 text-xs uppercase tracking-wider mb-2">What do you think?</p>
                                 <div className="grid grid-cols-2 gap-1.5">
                                   {VOTE_OPTIONS.map(opt => {
                                     const voteCount = votes.filter(v => v.vote === opt.key).length;
@@ -954,7 +954,7 @@ export default function Circle() {
                                         <span>{opt.emoji}</span>
                                         <span className={isMyVote ? 'text-accent font-medium' : 'text-cream/60'}>{opt.label}</span>
                                         {voteCount > 0 && (
-                                          <span className={`ml-auto text-[10px] ${isMyVote ? 'text-accent' : 'text-cream/30'}`}>{voteCount}</span>
+                                          <span className={`ml-auto text-xs ${isMyVote ? 'text-accent' : 'text-cream/50'}`}>{voteCount}</span>
                                         )}
                                       </button>
                                     );
@@ -966,7 +966,7 @@ export default function Circle() {
                             {/* Show vote counts for own prediction */}
                             {isOwn && votes.length > 0 && (
                               <div>
-                                <p className="text-cream/40 text-[10px] uppercase tracking-wider mb-2">Circle thinks</p>
+                                <p className="text-cream/60 text-xs uppercase tracking-wider mb-2">Circle thinks</p>
                                 <div className="flex gap-2 flex-wrap">
                                   {VOTE_OPTIONS.map(opt => {
                                     const voteCount = votes.filter(v => v.vote === opt.key).length;
@@ -975,7 +975,7 @@ export default function Circle() {
                                       <span key={opt.key} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/5 border border-black/5 text-xs">
                                         <span>{opt.emoji}</span>
                                         <span className="text-cream/50">{opt.label}</span>
-                                        <span className="text-cream/30">{voteCount}</span>
+                                        <span className="text-cream/50">{voteCount}</span>
                                       </span>
                                     );
                                   })}
@@ -993,7 +993,7 @@ export default function Circle() {
               {/* Resolved Predictions */}
               {filteredPredictions.filter(p => p.status === 'resolved').length > 0 && (
                 <div>
-                  <p className="text-cream/40 text-[10px] uppercase tracking-wider mb-2">Resolved</p>
+                  <p className="text-cream/60 text-xs uppercase tracking-wider mb-2">Resolved</p>
                   <div className="space-y-3">
                     {filteredPredictions.filter(p => p.status === 'resolved').map(pred => {
                       const profile = members.find(m => m.user_id === pred.user_id)?.profiles;
@@ -1012,7 +1012,7 @@ export default function Circle() {
                                   <p className="text-cream text-sm font-medium">
                                     {isOwn ? 'You' : profile?.display_name || 'Unknown'}
                                   </p>
-                                  <p className="text-cream/30 text-[10px]">Resolved {pred.resolved_at ? formatDateShort(pred.resolved_at.slice(0, 10)) : ''}</p>
+                                  <p className="text-cream/50 text-xs">Resolved {pred.resolved_at ? formatDateShort(pred.resolved_at.slice(0, 10)) : ''}</p>
                                 </div>
                               </div>
                               {resultOption && (
@@ -1033,15 +1033,15 @@ export default function Circle() {
 
                             <div className="grid grid-cols-3 gap-px bg-black/5 rounded-sm overflow-hidden mb-3">
                               <div className="bg-surface-up p-2.5 text-center">
-                                <p className="text-cream/40 text-[9px] uppercase">Predicted</p>
+                                <p className="text-cream/60 text-xs uppercase">Predicted</p>
                                 <p className="font-display text-lg text-cream">{formatWeight(pred.predicted_weight, pred.unit)}</p>
                               </div>
                               <div className="bg-surface-up p-2.5 text-center">
-                                <p className="text-cream/40 text-[9px] uppercase">Actual</p>
+                                <p className="text-cream/60 text-xs uppercase">Actual</p>
                                 <p className="font-display text-lg text-cream">{formatWeight(pred.actual_weight, pred.unit)}</p>
                               </div>
                               <div className="bg-surface-up p-2.5 text-center">
-                                <p className="text-cream/40 text-[9px] uppercase">Diff</p>
+                                <p className="text-cream/60 text-xs uppercase">Diff</p>
                                 <p className={`font-display text-lg ${
                                   Math.abs(pred.actual_weight - pred.predicted_weight) <= 0.5 ? 'text-success' : 'text-cream/50'
                                 }`}>
@@ -1053,7 +1053,7 @@ export default function Circle() {
                             {/* Who called it right */}
                             {votes.length > 0 && (
                               <div>
-                                <p className="text-cream/40 text-[10px] uppercase tracking-wider mb-1.5">Who called it?</p>
+                                <p className="text-cream/60 text-xs uppercase tracking-wider mb-1.5">Who called it?</p>
                                 <div className="space-y-1">
                                   {VOTE_OPTIONS.map(opt => {
                                     const optVoters = votes.filter(v => v.vote === opt.key);
@@ -1062,8 +1062,8 @@ export default function Circle() {
                                     return (
                                       <div key={opt.key} className={`flex items-center gap-2 text-xs px-2 py-1 rounded-sm ${isCorrect ? 'bg-success/10' : ''}`}>
                                         <span>{opt.emoji}</span>
-                                        <span className={isCorrect ? 'text-success' : 'text-cream/40'}>{opt.label}</span>
-                                        <span className="text-cream/30 ml-auto">
+                                        <span className={isCorrect ? 'text-success' : 'text-cream/60'}>{opt.label}</span>
+                                        <span className="text-cream/50 ml-auto">
                                           {optVoters.map(v => {
                                             const vProfile = members.find(m => m.user_id === v.user_id)?.profiles;
                                             return vProfile?.display_name || 'Unknown';
@@ -1086,17 +1086,17 @@ export default function Circle() {
 
               {/* Predictor Leaderboard */}
               {predictorStats.length > 0 && (
-                <div className="bg-surface-mid rounded-sm border border-black/5 p-4">
-                  <p className="text-cream/40 text-[10px] uppercase tracking-wider mb-2">Best Predictors</p>
+                <div className="bg-surface-mid rounded-sm border border-black/5 shadow-soft p-4">
+                  <p className="text-cream/60 text-xs uppercase tracking-wider mb-2">Best Predictors</p>
                   <div className="space-y-1.5">
                     {predictorStats.slice(0, 5).map((stat, i) => {
                       const profile = members.find(m => m.user_id === stat.userId)?.profiles;
                       return (
                         <div key={stat.userId} className="flex items-center gap-2 text-xs">
-                          <span className="text-cream/30 w-4">{i + 1}.</span>
+                          <span className="text-cream/50 w-4">{i + 1}.</span>
                           <Avatar url={profile?.avatar_url} name={profile?.display_name || '?'} size="xs" />
                           <span className="text-cream">{stat.userId === user.id ? 'You' : profile?.display_name || 'Unknown'}</span>
-                          <span className="text-cream/30 ml-auto">{stat.correct}/{stat.total} ({Math.round(stat.accuracy * 100)}%)</span>
+                          <span className="text-cream/50 ml-auto">{stat.correct}/{stat.total} ({Math.round(stat.accuracy * 100)}%)</span>
                         </div>
                       );
                     })}
@@ -1105,7 +1105,7 @@ export default function Circle() {
               )}
 
               {filteredPredictions.length === 0 && !showNewPrediction && (
-                <p className="text-cream/40 text-center py-8 text-sm">No predictions yet. Be the first to call your shot!</p>
+                <p className="text-cream/60 text-center py-8 text-sm">No predictions yet. Be the first to make one!</p>
               )}
             </div>
           )}
@@ -1114,7 +1114,7 @@ export default function Circle() {
           {tab === 'members' && (
             <div className="space-y-3">
               {memberStats.length === 0 ? (
-                <p className="text-cream/40 text-center py-8 text-sm">No members yet.</p>
+                <p className="text-cream/60 text-center py-8 text-sm">No members yet.</p>
               ) : (
                 memberStats.map(member => (
                   <div key={member.user_id} className={`bg-surface-mid rounded-sm border ${member.isYou ? 'border-accent/20' : 'border-black/5'}`}>
@@ -1134,7 +1134,7 @@ export default function Circle() {
                             </p>
                             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: member.color }} title="Graph color" />
                           </div>
-                          <p className="text-cream/30 text-[10px]">
+                          <p className="text-cream/50 text-xs">
                             {member.loggedToday ? 'Logged today' : member.latest ? `Last log ${formatDateShort(member.latest.date)}` : 'No entries yet'}
                           </p>
                         </div>
@@ -1146,47 +1146,47 @@ export default function Circle() {
 
                     <div className="grid grid-cols-4 gap-px bg-black/5 border-t border-black/5">
                       <div className="bg-surface-mid p-2.5 text-center">
-                        <p className="text-cream/40 text-[9px] uppercase tracking-wider">Streak</p>
+                        <p className="text-cream/60 text-xs uppercase tracking-wider">Streak</p>
                         <p className="font-display text-lg text-accent">{member.streak}</p>
-                        <p className="text-cream/30 text-[9px]">days</p>
+                        <p className="text-cream/50 text-xs">days</p>
                       </div>
                       <div className="bg-surface-mid p-2.5 text-center">
-                        <p className="text-cream/40 text-[9px] uppercase tracking-wider">7d Avg</p>
+                        <p className="text-cream/60 text-xs uppercase tracking-wider">7d Avg</p>
                         {member.avg7 ? (
                           <>
                             <p className="font-display text-lg text-cream">{formatWeight(member.avg7, unit)}</p>
                           </>
-                        ) : <p className="text-cream/20 text-xs mt-1">--</p>}
+                        ) : <p className="text-cream/40 text-xs mt-1">--</p>}
                       </div>
                       <div className="bg-surface-mid p-2.5 text-center">
-                        <p className="text-cream/40 text-[9px] uppercase tracking-wider">7 Day</p>
+                        <p className="text-cream/60 text-xs uppercase tracking-wider">7 Day</p>
                         {member.change7 ? (
                           <>
                             <p className={`font-display text-lg ${member.change7.change < 0 ? 'text-success' : member.change7.change > 0 ? 'text-danger' : 'text-cream/50'}`}>
                               {member.change7.change > 0 ? '+' : ''}{member.change7.change.toFixed(1)}
                             </p>
-                            <p className="text-cream/30 text-[9px]">{unit}</p>
+                            <p className="text-cream/50 text-xs">{unit}</p>
                           </>
-                        ) : <p className="text-cream/20 text-xs mt-1">--</p>}
+                        ) : <p className="text-cream/40 text-xs mt-1">--</p>}
                       </div>
                       <div className="bg-surface-mid p-2.5 text-center">
-                        <p className="text-cream/40 text-[9px] uppercase tracking-wider">30 Day</p>
+                        <p className="text-cream/60 text-xs uppercase tracking-wider">30 Day</p>
                         {member.change30 ? (
                           <>
                             <p className={`font-display text-lg ${member.change30.change < 0 ? 'text-success' : member.change30.change > 0 ? 'text-danger' : 'text-cream/50'}`}>
                               {member.change30.change > 0 ? '+' : ''}{member.change30.change.toFixed(1)}
                             </p>
-                            <p className="text-cream/30 text-[9px]">{unit}</p>
+                            <p className="text-cream/50 text-xs">{unit}</p>
                           </>
-                        ) : <p className="text-cream/20 text-xs mt-1">--</p>}
+                        ) : <p className="text-cream/40 text-xs mt-1">--</p>}
                       </div>
                     </div>
 
                     {member.recentDays.length > 1 && (
                       <div className="px-4 py-2.5 border-t border-black/5">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-cream/30 text-[9px] uppercase tracking-wider">Recent trend</span>
-                          <span className="text-cream/30 text-[9px]">Last {member.recentDays.length} entries</span>
+                          <span className="text-cream/50 text-xs uppercase tracking-wider">Recent trend</span>
+                          <span className="text-cream/50 text-xs">Last {member.recentDays.length} entries</span>
                         </div>
                         <MiniSparkline data={member.recentDays} color={member.color} />
                       </div>
@@ -1199,7 +1199,7 @@ export default function Circle() {
 
           {/* Compare Tab */}
           {tab === 'compare' && (
-            <div className="bg-surface-mid rounded-sm p-4 border border-black/5">
+            <div className="bg-surface-mid rounded-sm p-5 border border-black/5 shadow-soft">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-cream/50 text-xs uppercase tracking-wider">Weight Comparison</p>
                 <div className="flex gap-1 bg-surface-up rounded-sm p-0.5">
@@ -1207,7 +1207,7 @@ export default function Circle() {
                     <button
                       key={val}
                       onClick={() => setCompareRange(val)}
-                      className={`px-2 py-0.5 rounded-sm text-[10px] font-medium transition-colors ${
+                      className={`px-2 py-0.5 rounded-sm text-xs font-medium transition-colors ${
                         compareRange === val ? 'bg-accent text-white' : 'text-cream/50 hover:text-cream'
                       }`}
                     >
@@ -1236,7 +1236,7 @@ export default function Circle() {
                       width={40}
                     />
                     <Tooltip
-                      contentStyle={{ background: '#F0EFEB', border: '1px solid rgba(45,42,51,0.06)', borderRadius: 2, color: '#2D2A33' }}
+                      contentStyle={{ background: '#F0EFEB', border: '1px solid rgba(45,42,51,0.06)', borderRadius: 12, fontSize: 14, color: '#2D2A33' }}
                       labelFormatter={formatDateShort}
                       formatter={(value, name) => {
                         const m = memberStats.find(ms => ms.user_id === name);
@@ -1258,13 +1258,13 @@ export default function Circle() {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <p className="text-cream/40 text-center py-12 text-sm">Not enough data to compare yet.</p>
+                <p className="text-cream/60 text-center py-12 text-sm">Not enough data to compare yet.</p>
               )}
 
               {/* Legend */}
               <div className="flex flex-wrap gap-3 mt-3 justify-center">
                 {memberStats.map(m => (
-                  <span key={m.user_id} className="flex items-center gap-1.5 text-[10px] text-cream/50">
+                  <span key={m.user_id} className="flex items-center gap-1.5 text-xs text-cream/50">
                     <span className="w-3 h-0.5 rounded" style={{ backgroundColor: m.color }} />
                     {m.isYou ? 'You' : m.profiles?.display_name || 'Unknown'}
                   </span>

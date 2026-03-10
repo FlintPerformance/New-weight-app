@@ -495,10 +495,10 @@ export default function Goals() {
           <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">Past Goals</p>
           <div className="space-y-2">
             {goals.filter(g => !g.active).map(g => (
-              <div key={g.id} className="bg-surface-up rounded-sm p-3 border border-black/5 flex justify-between items-center">
+              <div key={g.id} className="bg-surface-up rounded-sm p-5 border border-black/5 flex justify-between items-center shadow-soft">
                 <div>
                   <p className="text-cream/60 text-sm">Target: {formatWeight(g.targetWeight, unit)}</p>
-                  <p className="text-cream/50 text-xs">From {formatWeight(g.startWeight, unit)}</p>
+                  <p className="text-cream/30 text-xs">From {formatWeight(g.startWeight, unit)}</p>
                 </div>
                 {confirmRemoveId === g.id ? (
                   <div className="flex gap-2">
@@ -506,7 +506,7 @@ export default function Goals() {
                     <button onClick={() => setConfirmRemoveId(null)} className="text-cream/60 text-xs">Cancel</button>
                   </div>
                 ) : (
-                  <button onClick={() => setConfirmRemoveId(g.id)} className="text-cream/50 hover:text-danger text-xs">Remove</button>
+                  <button onClick={() => setConfirmRemoveId(g.id)} className="text-cream/20 hover:text-danger text-xs">Remove</button>
                 )}
               </div>
             ))}

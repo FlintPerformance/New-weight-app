@@ -250,7 +250,7 @@ struct ProgressView: View {
             // Timeline
             if let totalDays = progress.totalDays, let daysPassed = progress.daysPassed {
                 VStack(spacing: 8) {
-                    ProgressView(value: Double(daysPassed), total: Double(totalDays))
+                    SwiftUI.ProgressView(value: Double(daysPassed), total: Double(totalDays))
                         .tint(AppColors.accent)
                     HStack {
                         Text(DateHelpers.formatShort(goal.startDate)).font(.caption2).foregroundStyle(.tertiary)

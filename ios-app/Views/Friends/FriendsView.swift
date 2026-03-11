@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FriendsView: View {
+    @EnvironmentObject var auth: AuthViewModel
     @StateObject private var vm = CircleViewModel()
     @State private var showCreate = false
     @State private var showJoin = false
@@ -25,8 +26,13 @@ struct FriendsView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showCreate) { CreateCircleSheet(vm: vm) }
-            .sheet(isPresented: $showJoin) { JoinCircleSheet(vm: vm) }
+            .sheet(isPresented: $showCreate) { CreateCircleSheet(vm: vm, userId: auth.user?.id ?? "") }
+            .sheet(isPresented: $showJoin) { JoinCircleSheet(vm: vm, userId: auth.user?.id ?? "") }
+            .task {
+                if let userId = auth.user?.id {
+                    await vm.loadCircles(userId: userId)
+                }
+            }
         }
     }
 
@@ -181,8 +187,10 @@ struct CompareTabView: View {
 
 struct CreateCircleSheet: View {
     @ObservedObject var vm: CircleViewModel
+    let userId: String
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
+    @State private var isCreating = false
 
     var body: some View {
         NavigationStack {
@@ -195,10 +203,13 @@ struct CreateCircleSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
-                        // TODO: vm.createCircle(name:)
-                        dismiss()
+                        isCreating = true
+                        Task {
+                            try? await vm.createCircle(name: name.trimmingCharacters(in: .whitespaces), userId: userId)
+                            dismiss()
+                        }
                     }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isCreating)
                 }
             }
         }
@@ -207,8 +218,11 @@ struct CreateCircleSheet: View {
 
 struct JoinCircleSheet: View {
     @ObservedObject var vm: CircleViewModel
+    let userId: String
     @Environment(\.dismiss) private var dismiss
     @State private var code = ""
+    @State private var isJoining = false
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -217,6 +231,12 @@ struct JoinCircleSheet: View {
                     .textInputAutocapitalization(.characters)
                     .font(.system(.title2, design: .monospaced))
                     .multilineTextAlignment(.center)
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                }
             }
             .navigationTitle("Join Friends")
             .navigationBarTitleDisplayMode(.inline)
@@ -224,10 +244,19 @@ struct JoinCircleSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Join") {
-                        // TODO: vm.joinCircle(code:)
-                        dismiss()
+                        isJoining = true
+                        errorMessage = nil
+                        Task {
+                            do {
+                                try await vm.joinCircle(code: code, userId: userId)
+                                dismiss()
+                            } catch {
+                                errorMessage = error.localizedDescription
+                                isJoining = false
+                            }
+                        }
                     }
-                    .disabled(code.count != 6)
+                    .disabled(code.count != 6 || isJoining)
                 }
             }
         }

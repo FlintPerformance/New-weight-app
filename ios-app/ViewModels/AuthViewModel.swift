@@ -1,5 +1,5 @@
 import SwiftUI
-import Combine
+import Supabase
 
 @MainActor
 class AuthViewModel: ObservableObject {
@@ -8,13 +8,56 @@ class AuthViewModel: ObservableObject {
     @Published var user: AppUser?
     @Published var errorMessage: String?
 
+    private var authListener: Task<Void, Never>?
+
     init() {
-        // TODO: Check Supabase session on launch
-        // For now, simulate loading
-        Task {
-            try? await Task.sleep(for: .seconds(0.5))
-            isLoading = false
+        Task { await checkSession() }
+        listenForAuthChanges()
+    }
+
+    deinit {
+        authListener?.cancel()
+    }
+
+    // MARK: - Session
+
+    private func checkSession() async {
+        do {
+            let session = try await SupabaseService.client.auth.session
+            setUser(from: session.user)
+        } catch {
+            isAuthenticated = false
         }
+        isLoading = false
+    }
+
+    private func listenForAuthChanges() {
+        authListener = Task {
+            for await (_, session) in SupabaseService.client.auth.authStateChanges {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    if let session {
+                        self.setUser(from: session.user)
+                    } else {
+                        self.user = nil
+                        self.isAuthenticated = false
+                    }
+                }
+            }
+        }
+    }
+
+    private func setUser(from supabaseUser: User) {
+        let metadata = supabaseUser.userMetadata
+        let displayName = metadata["display_name"]?.stringValue
+            ?? supabaseUser.email?.components(separatedBy: "@").first
+            ?? "User"
+        user = AppUser(
+            id: supabaseUser.id.uuidString,
+            email: supabaseUser.email ?? "",
+            displayName: displayName
+        )
+        isAuthenticated = true
     }
 
     // MARK: - Auth actions
@@ -22,11 +65,14 @@ class AuthViewModel: ObservableObject {
     func signUp(name: String, email: String, password: String) async {
         errorMessage = nil
         do {
-            // TODO: Supabase auth
-            // let result = try await supabase.auth.signUp(email: email, password: password)
-            // user = AppUser(from: result)
-            // isAuthenticated = true
-            throw AuthError.notImplemented
+            let result = try await SupabaseService.client.auth.signUp(
+                email: email,
+                password: password,
+                data: ["display_name": .string(name)]
+            )
+            if let session = result.session {
+                setUser(from: session.user)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -35,30 +81,28 @@ class AuthViewModel: ObservableObject {
     func signIn(email: String, password: String) async {
         errorMessage = nil
         do {
-            // TODO: Supabase auth
-            throw AuthError.notImplemented
+            let session = try await SupabaseService.client.auth.signIn(
+                email: email,
+                password: password
+            )
+            setUser(from: session.user)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    func signInWithApple() async {
-        errorMessage = nil
-        // TODO: Implement Sign in with Apple
-        // Required for App Store if you offer any social login
-    }
-
     func signOut() {
-        // TODO: Supabase sign out
-        user = nil
-        isAuthenticated = false
+        Task {
+            try? await SupabaseService.client.auth.signOut()
+            user = nil
+            isAuthenticated = false
+        }
     }
 
     func resetPassword(email: String) async {
         errorMessage = nil
         do {
-            // TODO: Supabase password reset
-            throw AuthError.notImplemented
+            try await SupabaseService.client.auth.resetPasswordForEmail(email)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -69,14 +113,4 @@ struct AppUser {
     let id: String
     let email: String
     let displayName: String
-}
-
-enum AuthError: LocalizedError {
-    case notImplemented
-
-    var errorDescription: String? {
-        switch self {
-        case .notImplemented: return "Auth not yet connected — wire up Supabase or Sign in with Apple"
-        }
-    }
 }

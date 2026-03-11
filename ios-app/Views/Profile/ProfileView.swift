@@ -4,9 +4,13 @@ import SwiftData
 struct ProfileView: View {
     @EnvironmentObject var auth: AuthViewModel
     @EnvironmentObject var appState: AppState
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \WeightEntry.date, order: .reverse) private var weights: [WeightEntry]
+    @Query(sort: \Goal.createdAt, order: .reverse) private var goals: [Goal]
 
     @State private var showLogout = false
+    @State private var isSyncing = false
+    @State private var showImporter = false
 
     private var streak: Int {
         let uniqueDates = Array(Set(weights.map(\.date))).sorted(by: >)
@@ -59,7 +63,8 @@ struct ProfileView: View {
 
                 // Data
                 Section("Data") {
-                    Button("Sync Now") { Task { await sync() } }
+                    Button(isSyncing ? "Syncing..." : "Sync Now") { Task { await sync() } }
+                        .disabled(isSyncing)
                     Button("Back Up My Data") { exportData() }
                     Button("Restore From Backup") { importData() }
                     Button("Start Fresh", role: .destructive) { }
@@ -173,17 +178,56 @@ struct ProfileView: View {
         }
     }
 
-    // MARK: - Actions (stubs)
+    // MARK: - Actions
 
     private func sync() async {
-        // TODO: SyncService.shared.sync()
+        guard let userId = auth.user?.id else { return }
+        isSyncing = true
+        defer { isSyncing = false }
+        do {
+            try await SyncService.shared.sync(userId: userId, modelContext: modelContext)
+        } catch {
+            print("Sync failed: \(error)")
+        }
     }
 
     private func exportData() {
-        // TODO: Export SwiftData to JSON
+        let weightData = weights.map { entry in
+            [
+                "id": entry.id,
+                "date": entry.date,
+                "weight": String(entry.weight),
+                "unit": entry.unit,
+                "notes": entry.notes,
+                "isMorning": entry.isMorning ? "true" : "false"
+            ]
+        }
+        let goalData = goals.map { goal in
+            [
+                "id": goal.id,
+                "targetWeight": String(goal.targetWeight),
+                "startWeight": String(goal.startWeight),
+                "unit": goal.unit,
+                "startDate": goal.startDate,
+                "targetDate": goal.targetDate,
+                "active": goal.isActive ? "true" : "false"
+            ]
+        }
+        let export: [String: Any] = ["weights": weightData, "goals": goalData]
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: export, options: .prettyPrinted) else { return }
+
+        let dateStr = DateHelpers.todayString()
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("subtle-backup-\(dateStr).json")
+        try? jsonData.write(to: tempURL)
+
+        let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            rootVC.present(activityVC, animated: true)
+        }
     }
 
     private func importData() {
-        // TODO: File picker → import JSON
+        showImporter = true
     }
 }

@@ -1,62 +1,87 @@
 import Foundation
+import Supabase
 
-/// Supabase client configuration and API wrapper.
-///
-/// Dependencies: Add `supabase-swift` package
-/// https://github.com/supabase/supabase-swift
-///
-/// Setup:
-/// 1. Add SPM dependency: https://github.com/supabase/supabase-swift
-/// 2. Set SUPABASE_URL and SUPABASE_ANON_KEY in environment or config
-/// 3. Initialize client in app startup
-enum SupabaseConfig {
-    // TODO: Move to environment/config
-    static let url = "https://YOUR_PROJECT.supabase.co"
-    static let anonKey = "YOUR_ANON_KEY"
+enum SupabaseService {
+    static let url = "https://ytvnytocmratapdwmzns.supabase.co"
+    static let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0dm55dG9jbXJhdGFwZHdtem5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTE0MTEsImV4cCI6MjA4ODU2NzQxMX0.rGNqxoqDp-ySeLulS-2VAriht21NFMkY_tbBwabF5hM"
+
+    static let client = SupabaseClient(
+        supabaseURL: URL(string: url)!,
+        supabaseKey: anonKey
+    )
 }
 
-/// Lightweight wrapper — actual Supabase SDK handles most of the work.
-/// This just centralizes the configuration and common queries.
-///
-/// Example usage with supabase-swift SDK:
-///
-/// ```swift
-/// import Supabase
-///
-/// let client = SupabaseClient(
-///     supabaseURL: URL(string: SupabaseConfig.url)!,
-///     supabaseKey: SupabaseConfig.anonKey
-/// )
-///
-/// // Auth
-/// try await client.auth.signUp(email: email, password: password)
-/// try await client.auth.signIn(email: email, password: password)
-/// try await client.auth.signInWithApple(idToken: token)
-///
-/// // Data
-/// let weights: [WeightRow] = try await client.from("weights")
-///     .select()
-///     .eq("user_id", value: userId)
-///     .order("date", ascending: false)
-///     .execute()
-///     .value
-///
-/// try await client.from("weights")
-///     .insert(weightRow)
-///     .execute()
-///
-/// // Storage (avatars)
-/// try await client.storage.from("avatars")
-///     .upload(path: "\(userId)/avatar.webp", file: imageData)
-///
-/// // Realtime (circle feed)
-/// let channel = client.channel("circle-feed")
-/// channel.on("postgres_changes", filter: .init(event: .insert, schema: "public", table: "circle_feed")) { payload in
-///     // Handle new feed entry
-/// }
-/// await channel.subscribe()
-/// ```
-enum SupabaseService {
-    // Client would be initialized here when SDK is added
-    // static let client = SupabaseClient(...)
+// MARK: - Codable row types matching Supabase table schema
+
+struct WeightRow: Codable {
+    let id: String
+    let user_id: String
+    let date: String
+    let weight: Double
+    let unit: String
+    let notes: String?
+    let is_morning: Bool
+    let updated_at: String
+}
+
+struct GoalRow: Codable {
+    let id: String
+    let user_id: String
+    let target_weight: Double
+    let start_weight: Double
+    let unit: String
+    let start_date: String
+    let target_date: String?
+    let active: Bool
+    let updated_at: String
+}
+
+struct ProfileRow: Codable {
+    let id: String
+    let display_name: String?
+    let avatar_url: String?
+    let graph_color: String?
+}
+
+struct CircleRow: Codable {
+    let id: String
+    let name: String
+    let invite_code: String
+    let created_by: String
+    let created_at: String?
+}
+
+struct CircleMemberRow: Codable {
+    let id: String?
+    let user_id: String
+    let circle_id: String
+    let role: String?
+    let joined_at: String?
+}
+
+struct CheerRow: Codable {
+    let id: String?
+    let entry_id: String
+    let user_id: String
+    let emoji: String
+}
+
+struct PredictionRow: Codable {
+    let id: String?
+    let user_id: String
+    let circle_id: String
+    let predicted_weight: Double
+    let start_weight: Double
+    let unit: String
+    let deadline: String
+    let message: String?
+    let resolved: Bool?
+    let actual_weight: Double?
+}
+
+struct PredictionVoteRow: Codable {
+    let id: String?
+    let prediction_id: String
+    let user_id: String
+    let outcome: String
 }

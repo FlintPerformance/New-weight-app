@@ -77,7 +77,7 @@ struct MainTabView: View {
     @State private var selectedTab: Tab = .home
 
     enum Tab: String, CaseIterable {
-        case home, progress, weighIn, friends, profile
+        case home, progress, weighIn, friends, health
     }
 
     var body: some View {
@@ -96,8 +96,8 @@ struct MainTabView: View {
                 FriendsView()
                     .tag(Tab.friends)
 
-                ProfileView()
-                    .tag(Tab.profile)
+                HealthView()
+                    .tag(Tab.health)
             }
             .animation(.snappy(duration: 0.25), value: selectedTab)
 

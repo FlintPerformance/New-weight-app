@@ -120,9 +120,6 @@ struct ProgressView: View {
                     // Weekly Check-In
                     WeeklyCheckInCard { showWeeklyCheckIn = true }
 
-                    // Health Correlations
-                    HealthCorrelationCard()
-
                     // Entry list
                     entriesSection
                 }

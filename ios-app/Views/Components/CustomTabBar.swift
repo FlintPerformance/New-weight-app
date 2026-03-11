@@ -8,7 +8,7 @@ struct CustomTabBar: View {
         (.home, "house.fill", "Home"),
         (.progress, "chart.xyaxis.line", "Progress"),
         (.friends, "person.3.fill", "Friends"),
-        (.profile, "person.crop.circle", "Profile"),
+        (.health, "heart.text.square.fill", "Health"),
     ]
 
     var body: some View {

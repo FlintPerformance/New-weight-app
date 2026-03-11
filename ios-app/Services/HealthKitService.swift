@@ -19,6 +19,8 @@ actor HealthKitService {
     private let stepsType = HKQuantityType(.stepCount)
     private let caloriesType = HKQuantityType(.activeEnergyBurned)
     private let bodyFatType = HKQuantityType(.bodyFatPercentage)
+    private let bmiType = HKQuantityType(.bodyMassIndex)
+    private let restingHRType = HKQuantityType(.restingHeartRate)
 
     private let readTypes: Set<HKObjectType> = [
         HKQuantityType(.bodyMass),
@@ -26,6 +28,7 @@ actor HealthKitService {
         HKQuantityType(.bodyFatPercentage),
         HKQuantityType(.stepCount),
         HKQuantityType(.activeEnergyBurned),
+        HKQuantityType(.restingHeartRate),
         HKCategoryType(.sleepAnalysis),
     ]
     private let writeTypes: Set<HKSampleType> = [
@@ -224,5 +227,71 @@ actor HealthKitService {
 
         let pct = sample.quantity.doubleValue(for: .percent()) * 100
         return (value: pct, date: sample.endDate)
+    }
+
+    // MARK: - BMI
+
+    /// Fetch the most recent BMI from Apple Health
+    func latestBMI() async throws -> (value: Double, date: Date)? {
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [.quantitySample(type: bmiType)],
+            sortDescriptors: [SortDescriptor(\.endDate, order: .reverse)],
+            limit: 1
+        )
+
+        let results = try await descriptor.result(for: store)
+        guard let sample = results.first else { return nil }
+
+        let bmi = sample.quantity.doubleValue(for: .count())
+        return (value: bmi, date: sample.endDate)
+    }
+
+    // MARK: - Resting Heart Rate
+
+    /// Fetch the most recent resting heart rate from Apple Health
+    func latestRestingHeartRate() async throws -> (value: Double, date: Date)? {
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [.quantitySample(type: restingHRType)],
+            sortDescriptors: [SortDescriptor(\.endDate, order: .reverse)],
+            limit: 1
+        )
+
+        let results = try await descriptor.result(for: store)
+        guard let sample = results.first else { return nil }
+
+        let bpm = sample.quantity.doubleValue(for: HKUnit(from: "count/min"))
+        return (value: bpm, date: sample.endDate)
+    }
+
+    /// Fetch daily resting heart rate for a date range (average per day).
+    func dailyRestingHeartRate(from startDate: Date, to endDate: Date = Date()) async throws -> [(date: Date, bpm: Double)] {
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        let interval = DateComponents(day: 1)
+
+        let query = HKStatisticsCollectionQuery(
+            quantityType: restingHRType,
+            quantitySamplePredicate: predicate,
+            options: .discreteAverage,
+            anchorDate: Calendar.current.startOfDay(for: startDate),
+            intervalComponents: interval
+        )
+
+        return try await withCheckedThrowingContinuation { continuation in
+            query.initialResultsHandler = { _, results, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                var data: [(date: Date, bpm: Double)] = []
+                results?.enumerateStatistics(from: startDate, to: endDate) { stats, _ in
+                    if let avg = stats.averageQuantity() {
+                        let bpm = avg.doubleValue(for: HKUnit(from: "count/min"))
+                        data.append((date: stats.startDate, bpm: bpm))
+                    }
+                }
+                continuation.resume(returning: data)
+            }
+            store.execute(query)
+        }
     }
 }

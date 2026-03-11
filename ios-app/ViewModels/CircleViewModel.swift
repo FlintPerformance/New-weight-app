@@ -7,14 +7,12 @@ class CircleViewModel: ObservableObject {
     @Published var circles: [Circle] = []
     @Published var feed: [FeedEntry] = []
     @Published var members: [CircleMember] = []
-    @Published var predictions: [Prediction] = []
     @Published var isLoading = false
     @Published var selectedTab: CircleTab = .feed
     @Published var selectedCircleId: String?
 
     enum CircleTab: String, CaseIterable {
         case feed = "Feed"
-        case predictions = "Predictions"
         case members = "Squad"
         case compare = "Compare"
     }
@@ -101,7 +99,6 @@ class CircleViewModel: ObservableObject {
 
             // Load feed
             await loadFeed(circleIds: circleIds)
-            await loadPredictions(circleIds: circleIds)
         } catch {
             print("Failed to load circles: \(error)")
         }
@@ -214,49 +211,6 @@ class CircleViewModel: ObservableObject {
             }
         } catch {
             print("Failed to load feed: \(error)")
-        }
-    }
-
-    func loadPredictions(circleIds: [String]) async {
-        guard !circleIds.isEmpty else {
-            predictions = []
-            return
-        }
-
-        do {
-            let rows: [PredictionRow] = try await SupabaseService.client
-                .from("predictions")
-                .select()
-                .in("circle_id", values: circleIds)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-
-            let profileMap = Dictionary(uniqueKeysWithValues:
-                circles.flatMap(\.members).map { ($0.userId, $0) }
-            )
-
-            predictions = rows.map { row in
-                let member = profileMap[row.user_id]
-                return Prediction(
-                    id: row.id ?? UUID().uuidString,
-                    userId: row.user_id,
-                    circleId: row.circle_id,
-                    displayName: member?.displayName ?? "User",
-                    avatarUrl: member?.avatarUrl,
-                    predictedWeight: row.predicted_weight,
-                    startWeight: row.start_weight,
-                    unit: row.unit,
-                    deadline: ISO8601DateFormatter().date(from: row.deadline) ?? Date(),
-                    message: row.message,
-                    createdAt: Date(),
-                    resolved: row.resolved ?? false,
-                    actualWeight: row.actual_weight,
-                    votes: []
-                )
-            }
-        } catch {
-            print("Failed to load predictions: \(error)")
         }
     }
 

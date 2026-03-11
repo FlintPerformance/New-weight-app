@@ -39,12 +39,11 @@ struct ProfileView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            List {
-                // Profile card
-                Section {
-                    profileCard
-                }
+        List {
+            // Profile card
+            Section {
+                profileCard
+            }
 
                 // Quick stats
                 if !weights.isEmpty {
@@ -90,11 +89,10 @@ struct ProfileView: View {
                         .listRowBackground(Color.clear)
                 }
             }
-            .navigationTitle("Profile")
-            .alert("Log Out?", isPresented: $showLogout) {
-                Button("Log Out", role: .destructive) { auth.signOut() }
-                Button("Cancel", role: .cancel) { }
-            }
+        .navigationTitle("Settings")
+        .alert("Log Out?", isPresented: $showLogout) {
+            Button("Log Out", role: .destructive) { auth.signOut() }
+            Button("Cancel", role: .cancel) { }
         }
     }
 

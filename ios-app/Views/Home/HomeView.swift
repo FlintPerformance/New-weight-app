@@ -10,6 +10,7 @@ struct HomeView: View {
     @Binding var showWeighIn: Bool
     @State private var selectedChartDate: String?
     @State private var appeared = false
+    @State private var showProfile = false
 
     private var latest: WeightEntry? { weights.first }
     private var activeGoal: Goal? { activeGoals.first }
@@ -118,6 +119,27 @@ struct HomeView: View {
                 .padding()
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showProfile = true
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .sheet(isPresented: $showProfile) {
+                NavigationStack {
+                    ProfileView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Done") { showProfile = false }
+                                    .fontWeight(.medium)
+                            }
+                        }
+                }
+            }
             .onAppear { appeared = true }
         }
     }

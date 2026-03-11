@@ -14,6 +14,7 @@ struct ProgressView: View {
     @State private var editingEntry: WeightEntry?
     @State private var showDeleteConfirm = false
     @State private var entryToDelete: WeightEntry?
+    @State private var selectedChartDate: String?
 
     enum TimeRange: String, CaseIterable {
         case sevenDays = "7d"
@@ -152,8 +153,41 @@ struct ProgressView: View {
         .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
+    private var selectedWeight: Double? {
+        guard let date = selectedChartDate else { return nil }
+        return chartData.first(where: { $0.date == date })?.weight
+    }
+
+    private var selectedEma: Double? {
+        guard let date = selectedChartDate else { return nil }
+        return emaData.first(where: { $0.date == date })?.ema
+    }
+
     private var chartSection: some View {
         VStack(alignment: .leading) {
+            // Selection readout
+            if let date = selectedChartDate {
+                HStack(spacing: 8) {
+                    if let w = selectedWeight {
+                        Text(WeightConverter.format(w, unit: appState.unit))
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .fontDesign(.rounded)
+                    }
+                    if let ema = selectedEma {
+                        Text("Trend \(WeightConverter.format(ema, unit: appState.unit))")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.accent)
+                    }
+                    Spacer()
+                    Text(DateHelpers.formatShort(date))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .transition(.opacity)
+                .padding(.bottom, 4)
+            }
+
             Chart {
                 // Raw weight data points (subtle dots)
                 ForEach(chartData, id: \.date) { point in
@@ -184,7 +218,15 @@ struct ProgressView: View {
                     )
                     .interpolationMethod(.catmullRom)
                 }
+
+                // Selection vertical rule
+                if let date = selectedChartDate {
+                    RuleMark(x: .value("Selected", date))
+                        .foregroundStyle(AppColors.accent.opacity(0.5))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                }
             }
+            .chartXSelection(value: $selectedChartDate)
             .chartYScale(domain: .automatic(includesZero: false))
             .chartXAxis {
                 AxisMarks(values: .automatic) { value in
@@ -196,6 +238,7 @@ struct ProgressView: View {
                 }
             }
             .frame(height: 200)
+            .animation(.snappy(duration: 0.2), value: selectedChartDate)
 
             // Legend + Goal
             HStack {

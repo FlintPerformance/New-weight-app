@@ -8,6 +8,7 @@ struct HomeView: View {
     @Query(sort: \WeightEntry.date, order: .reverse) private var weights: [WeightEntry]
     @Query(filter: #Predicate<Goal> { $0.isActive }, sort: \Goal.createdAt) private var activeGoals: [Goal]
     @Binding var showWeighIn: Bool
+    @State private var selectedChartDate: String?
 
     private var latest: WeightEntry? { weights.first }
     private var activeGoal: Goal? { activeGoals.first }
@@ -174,11 +175,43 @@ struct HomeView: View {
         }
     }
 
+    private var selectedChartWeight: Double? {
+        guard let date = selectedChartDate else { return nil }
+        return chartData.first(where: { $0.date == date })?.weight
+    }
+
+    private var selectedChartEma: Double? {
+        guard let date = selectedChartDate else { return nil }
+        return emaData.first(where: { $0.date == date })?.ema
+    }
+
     private var weeklyChart: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Your Week")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            HStack {
+                Text("Your Week")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if let date = selectedChartDate {
+                    HStack(spacing: 8) {
+                        if let w = selectedChartWeight {
+                            Text(WeightConverter.format(w, unit: appState.unit))
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .fontDesign(.rounded)
+                        }
+                        if let ema = selectedChartEma {
+                            Text("Trend \(WeightConverter.format(ema, unit: appState.unit))")
+                                .font(.caption2)
+                                .foregroundStyle(AppColors.accent)
+                        }
+                        Text(DateHelpers.formatShort(date))
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .transition(.opacity)
+                }
+            }
 
             Chart {
                 // Raw weight data points
@@ -213,7 +246,15 @@ struct HomeView: View {
                     )
                     .interpolationMethod(.catmullRom)
                 }
+
+                // Selection vertical rule
+                if let date = selectedChartDate {
+                    RuleMark(x: .value("Selected", date))
+                        .foregroundStyle(AppColors.accent.opacity(0.5))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                }
             }
+            .chartXSelection(value: $selectedChartDate)
             .chartXAxis {
                 AxisMarks(values: .automatic) { value in
                     AxisValueLabel {
@@ -226,6 +267,7 @@ struct HomeView: View {
             }
             .chartYScale(domain: .automatic(includesZero: false))
             .frame(height: 200)
+            .animation(.snappy(duration: 0.2), value: selectedChartDate)
 
             HStack(spacing: 12) {
                 HStack(spacing: 4) {

@@ -1,11 +1,18 @@
 import SwiftUI
 import Charts
+import SwiftData
 
 struct FriendsView: View {
     @EnvironmentObject var auth: AuthViewModel
     @StateObject private var vm = CircleViewModel()
+    @Query(filter: #Predicate<Goal> { $0.isActive }, sort: \Goal.createdAt) private var activeGoals: [Goal]
     @State private var showCreate = false
     @State private var showJoin = false
+
+    private var goalDirection: WeightGoalDirection? {
+        guard let goal = activeGoals.first else { return nil }
+        return goal.targetWeight < goal.startWeight ? .lose : .gain
+    }
 
     var body: some View {
         NavigationStack {
@@ -96,9 +103,9 @@ struct FriendsView: View {
                 case .predictions:
                     PredictionsTabView(predictions: vm.predictions)
                 case .members:
-                    MembersTabView(members: vm.members, feed: vm.feed)
+                    MembersTabView(members: vm.members, feed: vm.feed, goalDirection: goalDirection)
                 case .compare:
-                    CompareTabView()
+                    CompareTabView(goalDirection: goalDirection)
                         .environmentObject(vm)
                 }
             }
@@ -166,6 +173,7 @@ struct FeedEntryCard: View {
 struct MembersTabView: View {
     let members: [CircleMember]
     let feed: [FeedEntry]
+    let goalDirection: WeightGoalDirection?
 
     var body: some View {
         if members.isEmpty {
@@ -174,7 +182,7 @@ struct MembersTabView: View {
         } else {
             LazyVStack(spacing: 14) {
                 ForEach(members) { member in
-                    MemberCard(member: member, feed: feed)
+                    MemberCard(member: member, feed: feed, goalDirection: goalDirection)
                 }
             }
             .padding()
@@ -185,6 +193,7 @@ struct MembersTabView: View {
 struct MemberCard: View {
     let member: CircleMember
     let feed: [FeedEntry]
+    let goalDirection: WeightGoalDirection?
 
     private var entries: [FeedEntry] {
         feed.filter { $0.userId == member.userId }.sorted { $0.date < $1.date }
@@ -329,7 +338,7 @@ struct MemberCard: View {
 
     private func changeColor(_ change: Double?) -> Color {
         guard let change, change != 0 else { return .secondary }
-        return AppColors.changeColor(change)
+        return AppColors.changeColor(change, goalDirection: goalDirection)
     }
 }
 
@@ -433,7 +442,7 @@ struct PredictionCard: View {
                         .font(.callout)
                         .fontWeight(.semibold)
                         .fontDesign(.rounded)
-                        .foregroundStyle(isLoss ? AppColors.success : AppColors.warning)
+                        .foregroundStyle(AppColors.changeColor(weightChange))
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -475,6 +484,8 @@ struct PredictionCard: View {
 
 struct CompareTabView: View {
     @EnvironmentObject var vm: CircleViewModel
+    let goalDirection: WeightGoalDirection?
+    @State private var selectedDate: String?
 
     private static let memberColors: [Color] = [AppColors.accent, AppColors.success, AppColors.warning, .purple, .orange, .pink]
 
@@ -497,7 +508,6 @@ struct CompareTabView: View {
                 .filter { $0.userId == member.userId }
                 .sorted { $0.date < $1.date }
 
-            // Deduplicate by date, keep morning or latest
             var byDate: [String: Double] = [:]
             for entry in entries {
                 if entry.isMorning || byDate[entry.date] == nil {
@@ -518,52 +528,87 @@ struct CompareTabView: View {
         }
     }
 
+    private var selectedPointsText: String? {
+        guard let date = selectedDate else { return nil }
+        let points = chartPoints.filter { $0.date == date }
+        guard !points.isEmpty else { return nil }
+        return points.map { "\($0.name): \(String(format: "%.1f", $0.weight))" }.joined(separator: "  ·  ")
+    }
+
     var body: some View {
         if !hasData {
             ContentUnavailableView("No data to compare", systemImage: "chart.xyaxis.line", description: Text("Members need to log weight entries first"))
                 .padding()
         } else {
             VStack(spacing: 16) {
-                // Chart
-                Chart(chartPoints) { point in
-                    LineMark(
-                        x: .value("Date", point.date),
-                        y: .value("Weight", point.weight)
-                    )
-                    .foregroundStyle(by: .value("Member", point.name))
-                    .lineStyle(StrokeStyle(lineWidth: 2))
-                    .interpolationMethod(.catmullRom)
+                VStack(alignment: .leading, spacing: 8) {
+                    // Selection readout
+                    if let date = selectedDate {
+                        HStack {
+                            Text(DateHelpers.formatShort(date))
+                                .font(.caption)
+                                .fontWeight(.medium)
+                            Spacer()
+                            if let text = selectedPointsText {
+                                Text(text)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .transition(.opacity)
+                    }
 
-                    PointMark(
-                        x: .value("Date", point.date),
-                        y: .value("Weight", point.weight)
+                    // Chart
+                    Chart {
+                        ForEach(chartPoints) { point in
+                            LineMark(
+                                x: .value("Date", point.date),
+                                y: .value("Weight", point.weight)
+                            )
+                            .foregroundStyle(by: .value("Member", point.name))
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .interpolationMethod(.catmullRom)
+
+                            PointMark(
+                                x: .value("Date", point.date),
+                                y: .value("Weight", point.weight)
+                            )
+                            .foregroundStyle(by: .value("Member", point.name))
+                            .symbolSize(20)
+                        }
+
+                        if let date = selectedDate {
+                            RuleMark(x: .value("Selected", date))
+                                .foregroundStyle(.secondary.opacity(0.4))
+                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                        }
+                    }
+                    .chartXSelection(value: $selectedDate)
+                    .chartForegroundStyleScale(
+                        domain: vm.members.map(\.displayName),
+                        range: vm.members.map { colorFor($0) }
                     )
-                    .foregroundStyle(by: .value("Member", point.name))
-                    .symbolSize(20)
-                }
-                .chartForegroundStyleScale(
-                    domain: vm.members.map(\.displayName),
-                    range: vm.members.map { colorFor($0) }
-                )
-                .chartYScale(domain: .automatic(includesZero: false))
-                .chartXAxis {
-                    AxisMarks(values: .automatic) { value in
-                        AxisValueLabel {
-                            if let str = value.as(String.self) {
-                                Text(DateHelpers.formatShort(str)).font(.caption2)
+                    .chartYScale(domain: .automatic(includesZero: false))
+                    .chartXAxis {
+                        AxisMarks(values: .automatic) { value in
+                            AxisValueLabel {
+                                if let str = value.as(String.self) {
+                                    Text(DateHelpers.formatShort(str)).font(.caption2)
+                                }
                             }
                         }
                     }
+                    .chartLegend(position: .bottom, spacing: 12)
+                    .frame(height: 260)
+                    .animation(.snappy(duration: 0.2), value: selectedDate)
                 }
-                .chartLegend(position: .bottom, spacing: 12)
-                .frame(height: 260)
                 .padding()
                 .background(.regularMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
 
                 // Legend summary cards
                 ForEach(vm.members) { member in
-                    CompareLegendRow(member: member, feed: vm.feed, color: colorFor(member))
+                    CompareLegendRow(member: member, feed: vm.feed, color: colorFor(member), goalDirection: goalDirection)
                 }
             }
             .padding()
@@ -575,6 +620,7 @@ struct CompareLegendRow: View {
     let member: CircleMember
     let feed: [FeedEntry]
     let color: Color
+    let goalDirection: WeightGoalDirection?
 
     private var entries: [FeedEntry] {
         feed.filter { $0.userId == member.userId }.sorted { $0.date < $1.date }
@@ -611,7 +657,7 @@ struct CompareLegendRow: View {
                 Text("\(change > 0 ? "+" : "")\(String(format: "%.1f", change))")
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundStyle(AppColors.changeColor(change))
+                    .foregroundStyle(AppColors.changeColor(change, goalDirection: goalDirection))
             }
         }
         .padding(.horizontal)

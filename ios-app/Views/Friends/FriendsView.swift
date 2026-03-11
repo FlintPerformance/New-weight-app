@@ -306,7 +306,7 @@ struct MemberCard: View {
                     )
                     .interpolationMethod(.catmullRom)
                 }
-                .chartYScale(domain: .automatic(includesZero: false))
+                .chartYScale(domain: ChartHelpers.yDomain(for: trendData.map(\.weight)))
                 .chartXAxis(.hidden)
                 .chartYAxis(.hidden)
                 .frame(height: 40)
@@ -528,6 +528,10 @@ struct CompareTabView: View {
         }
     }
 
+    private var compareYDomain: ClosedRange<Double> {
+        ChartHelpers.yDomain(for: chartPoints.map(\.weight))
+    }
+
     private var selectedPointsText: String? {
         guard let date = selectedDate else { return nil }
         let points = chartPoints.filter { $0.date == date }
@@ -588,7 +592,7 @@ struct CompareTabView: View {
                         domain: vm.members.map(\.displayName),
                         range: vm.members.map { colorFor($0) }
                     )
-                    .chartYScale(domain: .automatic(includesZero: false))
+                    .chartYScale(domain: compareYDomain)
                     .chartXAxis {
                         AxisMarks(values: .automatic) { value in
                             AxisValueLabel {

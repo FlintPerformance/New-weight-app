@@ -65,6 +65,22 @@ extension Color {
     }
 }
 
+// MARK: - Chart helpers
+
+enum ChartHelpers {
+    /// Computes a Y-axis domain that centers the data vertically with generous padding
+    /// so the trend curve is visible rather than looking like a flat line.
+    /// Uses at least ±2 units of padding, or 3x the data range, whichever is larger.
+    static func yDomain(for values: [Double]) -> ClosedRange<Double> {
+        guard let lo = values.min(), let hi = values.max() else { return 0...1 }
+        let dataRange = hi - lo
+        let mid = (hi + lo) / 2.0
+        // At least 2 units of breathing room on each side, or 1.5x the data spread
+        let halfSpan = max(2.0, dataRange * 1.5)
+        return (mid - halfSpan)...(mid + halfSpan)
+    }
+}
+
 // MARK: - Streak messages
 
 enum StreakMessages {

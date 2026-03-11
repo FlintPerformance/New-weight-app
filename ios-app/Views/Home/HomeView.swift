@@ -72,6 +72,11 @@ struct HomeView: View {
 
     private var currentEma: Double? { emaData.last?.ema }
 
+    private var chartYDomain: ClosedRange<Double> {
+        let allValues = chartData.map(\.weight) + emaData.map(\.ema)
+        return ChartHelpers.yDomain(for: allValues)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -265,7 +270,7 @@ struct HomeView: View {
                     }
                 }
             }
-            .chartYScale(domain: .automatic(includesZero: false))
+            .chartYScale(domain: chartYDomain)
             .frame(height: 200)
             .animation(.snappy(duration: 0.2), value: selectedChartDate)
 

@@ -70,6 +70,11 @@ struct ProgressView: View {
         return allEma.filter { chartDates.contains($0.date) }
     }
 
+    private var chartYDomain: ClosedRange<Double> {
+        let allValues = chartData.map(\.weight) + emaData.map(\.ema)
+        return ChartHelpers.yDomain(for: allValues)
+    }
+
     private var stats: (count: Int, avg: Double, lowest: WeightEntry?, change: Double?)? {
         guard !filteredWeights.isEmpty else { return nil }
         let sorted = filteredWeights.sorted { $0.date < $1.date }
@@ -227,7 +232,7 @@ struct ProgressView: View {
                 }
             }
             .chartXSelection(value: $selectedChartDate)
-            .chartYScale(domain: .automatic(includesZero: false))
+            .chartYScale(domain: chartYDomain)
             .chartXAxis {
                 AxisMarks(values: .automatic) { value in
                     AxisValueLabel {

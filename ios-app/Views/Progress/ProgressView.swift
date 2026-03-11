@@ -177,9 +177,9 @@ struct ProgressView: View {
                 HStack(spacing: 16) {
                     // Mini ring
                     ZStack {
-                        Circle()
+                        SwiftUI.Circle()
                             .stroke(AppColors.accent.opacity(0.1), lineWidth: 6)
-                        Circle()
+                        SwiftUI.Circle()
                             .trim(from: 0, to: Double(progress.percentage) / 100)
                             .stroke(AppColors.accent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                             .rotationEffect(.degrees(-90))

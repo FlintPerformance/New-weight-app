@@ -129,7 +129,7 @@ struct FeedEntryCard: View {
     var body: some View {
         HStack(spacing: 12) {
             // Avatar
-            Circle()
+            SwiftUI.Circle()
                 .fill(AppColors.accent.opacity(0.2))
                 .frame(width: 40, height: 40)
                 .overlay(

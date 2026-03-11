@@ -107,6 +107,24 @@ class AuthViewModel: ObservableObject {
             errorMessage = error.localizedDescription
         }
     }
+
+    func signInWithApple(idToken: String, displayName: String?) async {
+        errorMessage = nil
+        do {
+            let session = try await SupabaseService.client.auth.signInWithIdToken(
+                credentials: .init(provider: .apple, idToken: idToken)
+            )
+            setUser(from: session.user)
+
+            // Update display name in metadata if provided by Apple (first sign-in only)
+            if let displayName, !displayName.isEmpty {
+                try? await SupabaseService.client.auth.update(user: .init(data: ["display_name": .string(displayName)]))
+                user = AppUser(id: user?.id ?? "", email: user?.email ?? "", displayName: displayName)
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
 }
 
 struct AppUser {

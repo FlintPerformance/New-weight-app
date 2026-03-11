@@ -11,6 +11,8 @@ struct ProfileView: View {
     @State private var showLogout = false
     @State private var isSyncing = false
     @State private var showImporter = false
+    @State private var healthKitConnected = false
+    @AppStorage("daily-reminders-enabled") private var remindersEnabled = false
 
     private var streak: Int {
         let uniqueDates = Array(Set(weights.map(\.date))).sorted(by: >)
@@ -158,13 +160,25 @@ struct ProfileView: View {
     }
 
     private var healthKitRow: some View {
-        HStack {
-            Label("Apple Health", systemImage: "heart.fill")
-                .foregroundStyle(.pink)
-            Spacer()
-            Text("Connect")
-                .font(.caption)
-                .foregroundStyle(AppColors.accent)
+        Button {
+            Task { await connectHealthKit() }
+        } label: {
+            HStack {
+                Label("Apple Health", systemImage: "heart.fill")
+                    .foregroundStyle(.pink)
+                Spacer()
+                Text(healthKitConnected ? "Connected" : "Connect")
+                    .font(.caption)
+                    .foregroundStyle(healthKitConnected ? AppColors.success : AppColors.accent)
+            }
+        }
+        .task {
+            // Check if already authorized on appear
+            let available = await HealthKitService.shared.isAvailable
+            if available {
+                let hasData = try? await HealthKitService.shared.latestWeight()
+                healthKitConnected = hasData != nil
+            }
         }
     }
 
@@ -173,8 +187,13 @@ struct ProfileView: View {
             Label("Daily Reminders", systemImage: "bell.fill")
                 .foregroundStyle(AppColors.warning)
             Spacer()
-            Toggle("", isOn: .constant(false))
-                .tint(AppColors.accent)
+            Toggle("", isOn: Binding(
+                get: { remindersEnabled },
+                set: { newValue in
+                    Task { await toggleReminders(newValue) }
+                }
+            ))
+            .tint(AppColors.accent)
         }
     }
 
@@ -229,5 +248,34 @@ struct ProfileView: View {
 
     private func importData() {
         showImporter = true
+    }
+
+    private func connectHealthKit() async {
+        do {
+            try await HealthKitService.shared.requestAuthorization()
+            healthKitConnected = true
+        } catch {
+            print("HealthKit auth failed: \(error)")
+        }
+    }
+
+    private func toggleReminders(_ enabled: Bool) async {
+        if enabled {
+            do {
+                let granted = try await NotificationService.shared.requestPermission()
+                if granted {
+                    await NotificationService.shared.scheduleDailyReminder()
+                    await NotificationService.shared.scheduleStreakReminder()
+                    remindersEnabled = true
+                } else {
+                    remindersEnabled = false
+                }
+            } catch {
+                remindersEnabled = false
+            }
+        } else {
+            await NotificationService.shared.cancelDailyReminder()
+            remindersEnabled = false
+        }
     }
 }

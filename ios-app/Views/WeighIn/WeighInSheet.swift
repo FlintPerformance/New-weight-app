@@ -3,6 +3,7 @@ import SwiftData
 
 struct WeighInSheet: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var auth: AuthViewModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \WeightEntry.date, order: .reverse) private var weights: [WeightEntry]
@@ -200,12 +201,27 @@ struct WeighInSheet: View {
 
         isSaving = true
         let dateStr = DateHelpers.formatDate(date)
-        let entry = WeightEntry(weight: value, unit: appState.unit, date: dateStr, notes: notes, isMorning: isMorning)
+        let unit = appState.unit
+        let entry = WeightEntry(weight: value, unit: unit, date: dateStr, notes: notes, isMorning: isMorning)
         modelContext.insert(entry)
 
         do {
             try modelContext.save()
-            onSuccess(CelebrationData(weight: value, unit: appState.unit, date: dateStr, isMorning: isMorning))
+
+            // Push to cloud in background
+            if let userId = auth.user?.id {
+                let ctx = modelContext
+                Task {
+                    try? await SyncService.shared.pushToCloud(userId: userId, modelContext: ctx)
+                }
+            }
+
+            // Write to HealthKit if available
+            Task {
+                try? await HealthKitService.shared.saveWeight(value, unit: unit, date: date)
+            }
+
+            onSuccess(CelebrationData(weight: value, unit: unit, date: dateStr, isMorning: isMorning))
         } catch {
             self.error = "Failed to save"
         }

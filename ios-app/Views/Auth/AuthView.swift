@@ -89,7 +89,7 @@ struct AuthView: View {
                         SignInWithAppleButton(.signIn) { request in
                             request.requestedScopes = [.fullName, .email]
                         } onCompletion: { result in
-                            // TODO: Handle Apple Sign In
+                            handleAppleSignIn(result)
                         }
                         .signInWithAppleButtonStyle(.whiteOutline)
                         .frame(height: 50)
@@ -135,6 +135,32 @@ struct AuthView: View {
         case .signUp: await auth.signUp(name: name, email: email, password: password)
         case .signIn: await auth.signIn(email: email, password: password)
         case .resetPassword: await auth.resetPassword(email: email)
+        }
+    }
+
+    private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let identityToken = credential.identityToken,
+                  let tokenString = String(data: identityToken, encoding: .utf8) else {
+                auth.errorMessage = "Failed to get Apple credential"
+                return
+            }
+
+            let fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+                .compactMap { $0 }
+                .joined(separator: " ")
+
+            Task {
+                await auth.signInWithApple(idToken: tokenString, displayName: fullName.isEmpty ? nil : fullName)
+            }
+
+        case .failure(let error):
+            // User cancelled is not a real error
+            if (error as NSError).code != ASAuthorizationError.canceled.rawValue {
+                auth.errorMessage = error.localizedDescription
+            }
         }
     }
 

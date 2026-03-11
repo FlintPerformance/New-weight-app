@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var auth: AuthViewModel
     @EnvironmentObject var appState: AppState
+    @Environment(\.modelContext) private var modelContext
     @State private var showWeighIn = false
     @State private var celebrationData: CelebrationData?
 
@@ -37,6 +38,13 @@ struct ContentView: View {
         .fullScreenCover(item: $celebrationData) { data in
             CelebrationView(data: data) {
                 celebrationData = nil
+            }
+        }
+        .onChange(of: auth.isAuthenticated) { _, isAuth in
+            if isAuth, let userId = auth.user?.id {
+                Task {
+                    try? await SyncService.shared.sync(userId: userId, modelContext: modelContext)
+                }
             }
         }
     }

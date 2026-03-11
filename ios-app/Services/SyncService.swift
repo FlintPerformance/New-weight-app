@@ -94,9 +94,6 @@ actor SyncService {
     // MARK: - Push to cloud
 
     func pushToCloud(userId: String, modelContext: ModelContext) async throws {
-        guard !isSyncing else { return }
-        isSyncing = true
-        defer { isSyncing = false }
 
         // Get unsynced weights
         let unsyncedWeights: [WeightEntry] = await MainActor.run {

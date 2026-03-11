@@ -39,7 +39,7 @@ final class WeightEntry {
 // MARK: - Computed helpers
 
 extension WeightEntry {
-    var weightInUnit(_ targetUnit: WeightUnit) -> Double {
+    func weightInUnit(_ targetUnit: WeightUnit) -> Double {
         let currentUnit = WeightUnit(rawValue: unit) ?? .lb
         return WeightConverter.convert(weight, from: currentUnit, to: targetUnit)
     }

@@ -63,7 +63,7 @@ struct CustomTabBar: View {
             onWeighIn()
         } label: {
             ZStack {
-                Circle()
+                SwiftUI.Circle()
                     .fill(AppColors.accent)
                     .frame(width: 52, height: 52)
                     .shadow(color: AppColors.accent.opacity(0.3), radius: 8, y: 4)

@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import Combine
 
 @MainActor
 class AuthViewModel: ObservableObject {

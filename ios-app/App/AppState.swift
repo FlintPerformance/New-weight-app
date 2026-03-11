@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 /// Global app state shared across views
 @MainActor

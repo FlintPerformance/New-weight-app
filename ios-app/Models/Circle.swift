@@ -35,6 +35,7 @@ struct FeedEntry: Identifiable, Codable {
     let isMorning: Bool
     let createdAt: Date
     var reactions: [Reaction]
+    var comments: [Comment]
 }
 
 struct Reaction: Identifiable, Codable {
@@ -42,6 +43,17 @@ struct Reaction: Identifiable, Codable {
     let userId: String
     let emoji: String
     let displayName: String
+}
+
+struct Comment: Identifiable, Codable {
+    let id: String
+    let entryId: String
+    let userId: String
+    let displayName: String
+    let avatarUrl: String?
+    let text: String
+    let createdAt: Date
+    var reactions: [Reaction]
 }
 
 struct Prediction: Identifiable, Codable {

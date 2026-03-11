@@ -66,6 +66,21 @@ struct CheerRow: Codable {
     let emoji: String
 }
 
+struct CommentRow: Codable {
+    let id: String?
+    let entry_id: String
+    let user_id: String
+    let text: String
+    let created_at: String
+}
+
+struct CommentCheerRow: Codable {
+    let id: String?
+    let comment_id: String
+    let user_id: String
+    let emoji: String
+}
+
 struct PredictionRow: Codable {
     let id: String?
     let user_id: String

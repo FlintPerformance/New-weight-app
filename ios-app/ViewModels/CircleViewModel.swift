@@ -97,7 +97,7 @@ class CircleViewModel: ObservableObject {
                 members = first.members
             }
 
-            // Load feed
+            // Load feed with reactions and comments
             await loadFeed(circleIds: circleIds)
         } catch {
             print("Failed to load circles: \(error)")
@@ -192,6 +192,77 @@ class CircleViewModel: ObservableObject {
                 circles.flatMap(\.members).map { ($0.userId, $0) }
             )
 
+            // Fetch reactions for these entries
+            let entryIds = weightRows.map(\.id)
+            let cheerRows: [CheerRow] = entryIds.isEmpty ? [] : (try? await SupabaseService.client
+                .from("cheers")
+                .select()
+                .in("entry_id", values: entryIds)
+                .execute()
+                .value) ?? []
+
+            // Fetch comments for these entries
+            let commentRows: [CommentRow] = entryIds.isEmpty ? [] : (try? await SupabaseService.client
+                .from("comments")
+                .select()
+                .in("entry_id", values: entryIds)
+                .order("created_at", ascending: true)
+                .execute()
+                .value) ?? []
+
+            // Fetch reactions on comments
+            let commentIds = commentRows.compactMap(\.id)
+            let commentCheerRows: [CommentCheerRow] = commentIds.isEmpty ? [] : (try? await SupabaseService.client
+                .from("comment_cheers")
+                .select()
+                .in("comment_id", values: commentIds)
+                .execute()
+                .value) ?? []
+
+            // Group reactions by entry
+            var reactionsByEntry: [String: [Reaction]] = [:]
+            for cheer in cheerRows {
+                let member = profileMap[cheer.user_id]
+                let reaction = Reaction(
+                    id: cheer.id ?? UUID().uuidString,
+                    userId: cheer.user_id,
+                    emoji: cheer.emoji,
+                    displayName: member?.displayName ?? "User"
+                )
+                reactionsByEntry[cheer.entry_id, default: []].append(reaction)
+            }
+
+            // Group comment reactions by comment
+            var reactionsByComment: [String: [Reaction]] = [:]
+            for cc in commentCheerRows {
+                let member = profileMap[cc.user_id]
+                let reaction = Reaction(
+                    id: cc.id ?? UUID().uuidString,
+                    userId: cc.user_id,
+                    emoji: cc.emoji,
+                    displayName: member?.displayName ?? "User"
+                )
+                reactionsByComment[cc.comment_id, default: []].append(reaction)
+            }
+
+            // Group comments by entry
+            var commentsByEntry: [String: [Comment]] = [:]
+            for row in commentRows {
+                let member = profileMap[row.user_id]
+                let commentId = row.id ?? UUID().uuidString
+                let comment = Comment(
+                    id: commentId,
+                    entryId: row.entry_id,
+                    userId: row.user_id,
+                    displayName: member?.displayName ?? "User",
+                    avatarUrl: member?.avatarUrl,
+                    text: row.text,
+                    createdAt: ISO8601DateFormatter().date(from: row.created_at) ?? Date(),
+                    reactions: reactionsByComment[commentId] ?? []
+                )
+                commentsByEntry[row.entry_id, default: []].append(comment)
+            }
+
             feed = weightRows.map { row in
                 let member = profileMap[row.user_id]
                 return FeedEntry(
@@ -206,7 +277,8 @@ class CircleViewModel: ObservableObject {
                     notes: row.notes,
                     isMorning: row.is_morning,
                     createdAt: ISO8601DateFormatter().date(from: row.updated_at) ?? Date(),
-                    reactions: []
+                    reactions: reactionsByEntry[row.id] ?? [],
+                    comments: commentsByEntry[row.id] ?? []
                 )
             }
         } catch {
@@ -214,9 +286,23 @@ class CircleViewModel: ObservableObject {
         }
     }
 
-    func toggleReaction(entryId: String, emoji: String, userId: String) async {
+    // MARK: - Reactions
+
+    func toggleReaction(entryId: String, emoji: String, userId: String, displayName: String) async {
+        // Optimistic update
+        if let idx = feed.firstIndex(where: { $0.id == entryId }) {
+            if let existingIdx = feed[idx].reactions.firstIndex(where: { $0.userId == userId && $0.emoji == emoji }) {
+                // Remove — user tapped same emoji again
+                feed[idx].reactions.remove(at: existingIdx)
+            } else {
+                // Remove any previous reaction from this user, add new one
+                feed[idx].reactions.removeAll { $0.userId == userId }
+                feed[idx].reactions.append(Reaction(id: UUID().uuidString, userId: userId, emoji: emoji, displayName: displayName))
+            }
+        }
+
         do {
-            // Delete existing reaction for this user/entry
+            // Clear existing reaction for this user/entry
             try await SupabaseService.client
                 .from("cheers")
                 .delete()
@@ -224,16 +310,112 @@ class CircleViewModel: ObservableObject {
                 .eq("user_id", value: userId)
                 .execute()
 
-            // Insert new reaction
-            let insert: [[String: String]] = [
-                ["entry_id": entryId, "user_id": userId, "emoji": emoji]
-            ]
-            try await SupabaseService.client
-                .from("cheers")
-                .insert(insert)
-                .execute()
+            // Check if we should insert (not a toggle-off)
+            if let idx = feed.firstIndex(where: { $0.id == entryId }),
+               feed[idx].reactions.contains(where: { $0.userId == userId && $0.emoji == emoji }) {
+                let insert: [[String: String]] = [
+                    ["entry_id": entryId, "user_id": userId, "emoji": emoji]
+                ]
+                try await SupabaseService.client
+                    .from("cheers")
+                    .insert(insert)
+                    .execute()
+            }
         } catch {
             print("Failed to toggle reaction: \(error)")
+        }
+    }
+
+    // MARK: - Comments
+
+    func postComment(entryId: String, text: String, userId: String, displayName: String, avatarUrl: String?) async {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        // Optimistic insert
+        let tempId = UUID().uuidString
+        let comment = Comment(
+            id: tempId,
+            entryId: entryId,
+            userId: userId,
+            displayName: displayName,
+            avatarUrl: avatarUrl,
+            text: trimmed,
+            createdAt: Date(),
+            reactions: []
+        )
+        if let idx = feed.firstIndex(where: { $0.id == entryId }) {
+            feed[idx].comments.append(comment)
+        }
+
+        do {
+            let insert: [[String: String]] = [
+                ["entry_id": entryId, "user_id": userId, "text": trimmed]
+            ]
+            let inserted: [CommentRow] = try await SupabaseService.client
+                .from("comments")
+                .insert(insert)
+                .select()
+                .execute()
+                .value
+
+            // Update with real ID
+            if let realId = inserted.first?.id,
+               let entryIdx = feed.firstIndex(where: { $0.id == entryId }),
+               let commentIdx = feed[entryIdx].comments.firstIndex(where: { $0.id == tempId }) {
+                feed[entryIdx].comments[commentIdx] = Comment(
+                    id: realId,
+                    entryId: entryId,
+                    userId: userId,
+                    displayName: displayName,
+                    avatarUrl: avatarUrl,
+                    text: trimmed,
+                    createdAt: comment.createdAt,
+                    reactions: []
+                )
+            }
+        } catch {
+            // Rollback optimistic insert
+            if let idx = feed.firstIndex(where: { $0.id == entryId }) {
+                feed[idx].comments.removeAll { $0.id == tempId }
+            }
+            print("Failed to post comment: \(error)")
+        }
+    }
+
+    func toggleCommentReaction(entryId: String, commentId: String, emoji: String, userId: String, displayName: String) async {
+        // Optimistic update
+        if let entryIdx = feed.firstIndex(where: { $0.id == entryId }),
+           let commentIdx = feed[entryIdx].comments.firstIndex(where: { $0.id == commentId }) {
+            if let existingIdx = feed[entryIdx].comments[commentIdx].reactions.firstIndex(where: { $0.userId == userId && $0.emoji == emoji }) {
+                feed[entryIdx].comments[commentIdx].reactions.remove(at: existingIdx)
+            } else {
+                feed[entryIdx].comments[commentIdx].reactions.removeAll { $0.userId == userId }
+                feed[entryIdx].comments[commentIdx].reactions.append(Reaction(id: UUID().uuidString, userId: userId, emoji: emoji, displayName: displayName))
+            }
+        }
+
+        do {
+            try await SupabaseService.client
+                .from("comment_cheers")
+                .delete()
+                .eq("comment_id", value: commentId)
+                .eq("user_id", value: userId)
+                .execute()
+
+            if let entryIdx = feed.firstIndex(where: { $0.id == entryId }),
+               let commentIdx = feed[entryIdx].comments.firstIndex(where: { $0.id == commentId }),
+               feed[entryIdx].comments[commentIdx].reactions.contains(where: { $0.userId == userId && $0.emoji == emoji }) {
+                let insert: [[String: String]] = [
+                    ["comment_id": commentId, "user_id": userId, "emoji": emoji]
+                ]
+                try await SupabaseService.client
+                    .from("comment_cheers")
+                    .insert(insert)
+                    .execute()
+            }
+        } catch {
+            print("Failed to toggle comment reaction: \(error)")
         }
     }
 

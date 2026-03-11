@@ -103,7 +103,9 @@ struct FriendsView: View {
                 Group {
                     switch vm.selectedTab {
                     case .feed:
-                        FeedTabView(feed: vm.feed)
+                        FeedTabView()
+                            .environmentObject(vm)
+                            .environmentObject(auth)
                     case .members:
                         MembersTabView(members: vm.members, feed: vm.feed, goalDirection: goalDirection)
                     case .compare:
@@ -120,15 +122,18 @@ struct FriendsView: View {
 // MARK: - Feed Tab
 
 struct FeedTabView: View {
-    let feed: [FeedEntry]
+    @EnvironmentObject var vm: CircleViewModel
+    @EnvironmentObject var auth: AuthViewModel
 
     var body: some View {
-        if feed.isEmpty {
+        if vm.feed.isEmpty {
             ContentUnavailableView("No activity yet", systemImage: "list.bullet", description: Text("Entries from your circle will show up here"))
         } else {
-            LazyVStack(spacing: 12) {
-                ForEach(feed) { entry in
+            LazyVStack(spacing: 14) {
+                ForEach(vm.feed) { entry in
                     FeedEntryCard(entry: entry)
+                        .environmentObject(vm)
+                        .environmentObject(auth)
                 }
             }
             .padding()
@@ -138,37 +143,354 @@ struct FeedTabView: View {
 
 struct FeedEntryCard: View {
     let entry: FeedEntry
+    @EnvironmentObject var vm: CircleViewModel
+    @EnvironmentObject var auth: AuthViewModel
+    @State private var showComments = false
+    @State private var commentText = ""
+    @State private var showReactionPicker = false
+
+    private var currentUserId: String { auth.user?.id ?? "" }
+    private var currentDisplayName: String { auth.user?.displayName ?? "You" }
+
+    // Group reactions by emoji
+    private var groupedReactions: [(emoji: String, count: Int, byMe: Bool)] {
+        var groups: [String: (count: Int, byMe: Bool)] = [:]
+        for r in entry.reactions {
+            let existing = groups[r.emoji] ?? (count: 0, byMe: false)
+            groups[r.emoji] = (count: existing.count + 1, byMe: existing.byMe || r.userId == currentUserId)
+        }
+        return groups.map { (emoji: $0.key, count: $0.value.count, byMe: $0.value.byMe) }
+            .sorted { $0.count > $1.count }
+    }
 
     var body: some View {
-        HStack(spacing: 12) {
-            SwiftUI.Circle()
-                .fill(AppColors.accent.opacity(0.2))
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Text(String(entry.displayName.prefix(1)).uppercased())
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .foregroundStyle(AppColors.accent)
-                )
+        VStack(alignment: .leading, spacing: 0) {
+            // Header row
+            HStack(spacing: 12) {
+                SwiftUI.Circle()
+                    .fill(AppColors.accent.opacity(0.2))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Text(String(entry.displayName.prefix(1)).uppercased())
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundStyle(AppColors.accent)
+                    )
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.displayName)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                Text(DateHelpers.timeAgo(from: entry.createdAt))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.displayName)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    Text(DateHelpers.timeAgo(from: entry.createdAt))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Spacer()
+
+                Text(WeightConverter.format(entry.weight, unit: WeightUnit(rawValue: entry.unit) ?? .lb))
+                    .font(.headline)
+                    .fontWeight(.semibold)
+            }
+            .padding(.horizontal)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            // Notes
+            if let notes = entry.notes, !notes.isEmpty {
+                Text(notes)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
             }
 
-            Spacer()
+            // Reaction badges row
+            if !groupedReactions.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(groupedReactions, id: \.emoji) { group in
+                            Button {
+                                Task {
+                                    await vm.toggleReaction(
+                                        entryId: entry.id,
+                                        emoji: group.emoji,
+                                        userId: currentUserId,
+                                        displayName: currentDisplayName
+                                    )
+                                }
+                            } label: {
+                                HStack(spacing: 3) {
+                                    Text(group.emoji)
+                                        .font(.caption)
+                                    if group.count > 1 {
+                                        Text("\(group.count)")
+                                            .font(.caption2)
+                                            .fontWeight(.medium)
+                                            .foregroundStyle(group.byMe ? AppColors.accent : .secondary)
+                                    }
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(group.byMe ? AppColors.accent.opacity(0.12) : Color.secondary.opacity(0.08))
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(group.byMe ? AppColors.accent.opacity(0.3) : Color.clear, lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                .padding(.bottom, 8)
+            }
 
-            Text(WeightConverter.format(entry.weight, unit: WeightUnit(rawValue: entry.unit) ?? .lb))
-                .font(.headline)
-                .fontWeight(.semibold)
+            Divider()
+                .padding(.horizontal)
+
+            // Action bar: react + comment
+            HStack(spacing: 0) {
+                // React button
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showReactionPicker.toggle()
+                    }
+                } label: {
+                    Label("React", systemImage: "face.smiling")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+
+                Divider()
+                    .frame(height: 16)
+
+                // Comment button
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showComments.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bubble.left")
+                        Text(entry.comments.isEmpty ? "Comment" : "\(entry.comments.count)")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Reaction picker
+            if showReactionPicker {
+                HStack(spacing: 12) {
+                    ForEach(ReactionType.allCases, id: \.rawValue) { type in
+                        Button {
+                            Task {
+                                await vm.toggleReaction(
+                                    entryId: entry.id,
+                                    emoji: type.rawValue,
+                                    userId: currentUserId,
+                                    displayName: currentDisplayName
+                                )
+                            }
+                            withAnimation { showReactionPicker = false }
+                        } label: {
+                            Text(type.rawValue)
+                                .font(.title2)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background(Color.secondary.opacity(0.06))
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            // Comments section
+            if showComments {
+                VStack(alignment: .leading, spacing: 0) {
+                    if !entry.comments.isEmpty {
+                        ForEach(entry.comments) { comment in
+                            CommentRow(entryId: entry.id, comment: comment)
+                                .environmentObject(vm)
+                                .environmentObject(auth)
+                        }
+                    }
+
+                    // Comment input
+                    HStack(spacing: 8) {
+                        TextField("Add a comment...", text: $commentText)
+                            .font(.caption)
+                            .textFieldStyle(.plain)
+
+                        Button {
+                            let text = commentText
+                            commentText = ""
+                            Task {
+                                await vm.postComment(
+                                    entryId: entry.id,
+                                    text: text,
+                                    userId: currentUserId,
+                                    displayName: currentDisplayName,
+                                    avatarUrl: nil
+                                )
+                            }
+                        } label: {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.secondary.opacity(0.3) : AppColors.accent)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                }
+                .background(Color.secondary.opacity(0.04))
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
-        .padding()
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+}
+
+// MARK: - Comment Row
+
+struct CommentRow: View {
+    let entryId: String
+    let comment: Comment
+    @EnvironmentObject var vm: CircleViewModel
+    @EnvironmentObject var auth: AuthViewModel
+    @State private var showReactionPicker = false
+
+    private var currentUserId: String { auth.user?.id ?? "" }
+    private var currentDisplayName: String { auth.user?.displayName ?? "You" }
+
+    private var groupedReactions: [(emoji: String, count: Int, byMe: Bool)] {
+        var groups: [String: (count: Int, byMe: Bool)] = [:]
+        for r in comment.reactions {
+            let existing = groups[r.emoji] ?? (count: 0, byMe: false)
+            groups[r.emoji] = (count: existing.count + 1, byMe: existing.byMe || r.userId == currentUserId)
+        }
+        return groups.map { (emoji: $0.key, count: $0.value.count, byMe: $0.value.byMe) }
+            .sorted { $0.count > $1.count }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .top, spacing: 8) {
+                SwiftUI.Circle()
+                    .fill(AppColors.accent.opacity(0.15))
+                    .frame(width: 24, height: 24)
+                    .overlay(
+                        Text(String(comment.displayName.prefix(1)).uppercased())
+                            .font(.system(size: 10))
+                            .fontWeight(.bold)
+                            .foregroundStyle(AppColors.accent)
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(comment.displayName)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                        Text(DateHelpers.timeAgo(from: comment.createdAt))
+                            .font(.system(size: 9))
+                            .foregroundStyle(.tertiary)
+                    }
+                    Text(comment.text)
+                        .font(.caption)
+                        .foregroundStyle(.primary)
+                }
+
+                Spacer()
+
+                // Tap to react to comment
+                Button {
+                    withAnimation(.snappy(duration: 0.15)) {
+                        showReactionPicker.toggle()
+                    }
+                } label: {
+                    Image(systemName: "face.smiling")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Comment reaction badges
+            if !groupedReactions.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(groupedReactions, id: \.emoji) { group in
+                        Button {
+                            Task {
+                                await vm.toggleCommentReaction(
+                                    entryId: entryId,
+                                    commentId: comment.id,
+                                    emoji: group.emoji,
+                                    userId: currentUserId,
+                                    displayName: currentDisplayName
+                                )
+                            }
+                        } label: {
+                            HStack(spacing: 2) {
+                                Text(group.emoji)
+                                    .font(.system(size: 10))
+                                if group.count > 1 {
+                                    Text("\(group.count)")
+                                        .font(.system(size: 9))
+                                        .foregroundStyle(group.byMe ? AppColors.accent : .secondary)
+                                }
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(group.byMe ? AppColors.accent.opacity(0.1) : Color.secondary.opacity(0.06))
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.leading, 32)
+            }
+
+            // Inline reaction picker for comment
+            if showReactionPicker {
+                HStack(spacing: 8) {
+                    ForEach(ReactionType.allCases, id: \.rawValue) { type in
+                        Button {
+                            Task {
+                                await vm.toggleCommentReaction(
+                                    entryId: entryId,
+                                    commentId: comment.id,
+                                    emoji: type.rawValue,
+                                    userId: currentUserId,
+                                    displayName: currentDisplayName
+                                )
+                            }
+                            withAnimation { showReactionPicker = false }
+                        } label: {
+                            Text(type.rawValue)
+                                .font(.caption)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.leading, 32)
+                .padding(.vertical, 2)
+                .transition(.opacity)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
     }
 }
 

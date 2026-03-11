@@ -32,7 +32,7 @@ struct ProgressView: View {
     }
 
     private var activeGoal: Goal? { goals.first { $0.isActive } }
-    private var goalDirection: Goal.Direction? {
+    private var goalDirection: WeightGoalDirection? {
         guard let goal = activeGoal else { return nil }
         return goal.targetWeight < goal.startWeight ? .lose : .gain
     }

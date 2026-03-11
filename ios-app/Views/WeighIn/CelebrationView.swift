@@ -37,7 +37,7 @@ struct CelebrationView: View {
         return data.weight - prev
     }
 
-    private var goalDirection: Goal.Direction? {
+    private var goalDirection: WeightGoalDirection? {
         guard let goal = activeGoals.first else { return nil }
         return goal.targetWeight < goal.startWeight ? .lose : .gain
     }

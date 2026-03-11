@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// Lightweight direction enum used by AppColors and StreakMessages
+/// so Constants.swift has no dependency on the Goal model.
+enum WeightGoalDirection {
+    case lose, gain
+}
+
 enum AppColors {
     static let accent = Color(hex: "#2B9B8F")
     static let accentDark = Color(hex: "#238079")
@@ -9,7 +15,7 @@ enum AppColors {
 
     /// Returns green/red based on whether the change aligns with the goal direction.
     /// When gaining, positive change is good. When losing (or no goal), negative change is good.
-    static func changeColor(_ change: Double, goalDirection: Goal.Direction? = nil) -> Color {
+    static func changeColor(_ change: Double, goalDirection: WeightGoalDirection? = nil) -> Color {
         guard change != 0 else { return .secondary }
         let isGood: Bool
         switch goalDirection {
@@ -74,7 +80,7 @@ enum StreakMessages {
         }
     }
 
-    static func celebrationMessage(streak: Int, diff: Double?, goalDirection: Goal.Direction? = nil) -> String {
+    static func celebrationMessage(streak: Int, diff: Double?, goalDirection: WeightGoalDirection? = nil) -> String {
         if streak >= 14 { return "Absolutely unstoppable!" }
         if streak >= 7 { return "You're on fire!" }
         if streak >= 3 { return "Keep it rolling!" }

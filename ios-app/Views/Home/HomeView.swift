@@ -11,7 +11,7 @@ struct HomeView: View {
 
     private var latest: WeightEntry? { weights.first }
     private var activeGoal: Goal? { activeGoals.first }
-    private var goalDirection: Goal.Direction? {
+    private var goalDirection: WeightGoalDirection? {
         guard let goal = activeGoal else { return nil }
         return goal.targetWeight < goal.startWeight ? .lose : .gain
     }

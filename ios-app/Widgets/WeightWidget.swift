@@ -34,7 +34,7 @@ struct WeightTimelineProvider: TimelineProvider {
 
     private func readLatestData() -> WeightWidgetEntry? {
         // TODO: Read from App Group shared container
-        // let defaults = UserDefaults(suiteName: "group.com.yourapp.steady")
+        // let defaults = UserDefaults(suiteName: "group.com.yourapp.subtle")
         // let weight = defaults?.double(forKey: "widget-weight")
         // etc.
         return nil
@@ -59,7 +59,7 @@ struct WeightWidgetSmallView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("steady")
+            Text("subtle")
                 .font(.caption2)
                 .fontWeight(.black)
                 .foregroundStyle(Color(hex: "#2B9B8F"))
@@ -94,7 +94,7 @@ struct WeightWidgetMediumView: View {
         HStack(spacing: 16) {
             // Left: weight + streak
             VStack(alignment: .leading, spacing: 8) {
-                Text("steady")
+                Text("subtle")
                     .font(.caption2)
                     .fontWeight(.black)
                     .foregroundStyle(Color(hex: "#2B9B8F"))

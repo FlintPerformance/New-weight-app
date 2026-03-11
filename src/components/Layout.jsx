@@ -25,8 +25,8 @@ export default function Layout({ children }) {
       {/* Desktop Sidebar */}
       <aside className="hidden desktop:flex desktop:flex-col desktop:w-60 desktop:shrink-0 bg-surface-mid border-r border-black/[0.06] z-40 shadow-soft">
         <div className="p-6 border-b border-black/[0.06]">
-          <span className="font-logo text-2xl font-extrabold text-accent" aria-label="Steady">
-            steady
+          <span className="font-logo text-2xl font-extrabold text-accent" aria-label="Subtle">
+            subtle
           </span>
           <p className="text-xs text-muted mt-1.5" aria-hidden="true">Your weight, your way</p>
         </div>
@@ -65,8 +65,8 @@ export default function Layout({ children }) {
       {/* Mobile Header */}
       <header className="desktop:hidden shrink-0 bg-surface-mid border-b border-black/[0.06] safe-top shadow-soft">
         <div className="flex items-center justify-center px-5 h-12">
-          <span className="font-logo text-xl font-extrabold text-accent" aria-label="Steady">
-            steady
+          <span className="font-logo text-xl font-extrabold text-accent" aria-label="Subtle">
+            subtle
           </span>
         </div>
       </header>

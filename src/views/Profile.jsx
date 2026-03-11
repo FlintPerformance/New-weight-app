@@ -48,7 +48,7 @@ export default function Profile() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [graphColor, setGraphColor] = useState('#2B9B8F');
-  const [pushEnabled, setPushEnabled] = useState(() => localStorage.getItem('steady-push-enabled') === '1');
+  const [pushEnabled, setPushEnabled] = useState(() => localStorage.getItem('subtle-push-enabled') === '1');
   const [pushLoading, setPushLoading] = useState(false);
 
   const streak = getStreak(weights);
@@ -110,7 +110,7 @@ export default function Profile() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `steady-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `subtle-backup-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       showToast('Data exported');
@@ -169,7 +169,7 @@ export default function Profile() {
     try {
       await subscribeToPush(user.id);
       setPushEnabled(true);
-      localStorage.setItem('steady-push-enabled', '1');
+      localStorage.setItem('subtle-push-enabled', '1');
       showToast('Reminders enabled');
     } catch (err) {
       showToast(err.message, 'error');
@@ -183,7 +183,7 @@ export default function Profile() {
     try {
       await unsubscribeFromPush(user.id);
       setPushEnabled(false);
-      localStorage.removeItem('steady-push-enabled');
+      localStorage.removeItem('subtle-push-enabled');
       showToast('Reminders disabled');
     } catch (err) {
       showToast('Failed to disable notifications: ' + err.message, 'error');
@@ -355,7 +355,7 @@ export default function Profile() {
       </button>
 
       <p className="text-center text-cream/40 text-xs mt-6 mb-4">
-        Steady v1.0.0 · Build {typeof __APP_BUILD__ !== 'undefined' ? __APP_BUILD__ : 'dev'}
+        Subtle v1.0.0 · Build {typeof __APP_BUILD__ !== 'undefined' ? __APP_BUILD__ : 'dev'}
       </p>
     </div>
   );

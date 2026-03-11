@@ -5,7 +5,7 @@ const SLIDES = [
     key: 'install',
     Icon: InstallIcon,
     title: 'Make It Yours',
-    body: 'Add Steady to your home screen for the best experience. It works just like a native app!',
+    body: 'Add Subtle to your home screen for the best experience. It works just like a native app!',
     hint: 'iOS: Safari \u2192 Share \u2192 Add to Home Screen\nAndroid: Chrome \u2192 Menu \u2192 Add to Home Screen',
   },
   {

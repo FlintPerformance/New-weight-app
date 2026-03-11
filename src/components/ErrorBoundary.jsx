@@ -28,7 +28,7 @@ export default class ErrorBoundary extends React.Component {
         <div className="min-h-screen bg-surface flex items-center justify-center p-6">
           <div className="text-center max-w-sm">
             <h1 className="font-logo text-4xl font-extrabold text-accent mb-4">
-              steady
+              subtle
             </h1>
             <p className="text-cream/60 text-sm mb-6">Something went wrong. Your data is safe.</p>
             <div className="flex gap-3 justify-center">

@@ -43,14 +43,14 @@ export default function AuthView() {
     }
   };
 
-  const heading = mode === 'signup' ? 'Join Steady!' : mode === 'login' ? 'Welcome Back!' : 'Forgot Password?';
+  const heading = mode === 'signup' ? 'Join Subtle!' : mode === 'login' ? 'Welcome Back!' : 'Forgot Password?';
 
   return (
     <div className="h-[100dvh] bg-surface flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
         {/* Brand header */}
         <div className="text-center mb-6">
-          <h1 className="font-logo text-5xl tracking-tight font-extrabold text-accent">steady</h1>
+          <h1 className="font-logo text-5xl tracking-tight font-extrabold text-accent">subtle</h1>
           <p className="text-sm text-muted mt-1.5">Your friendly weight companion</p>
         </div>
 

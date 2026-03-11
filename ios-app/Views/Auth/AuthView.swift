@@ -18,7 +18,7 @@ struct AuthView: View {
             VStack(spacing: 32) {
                 // Brand
                 VStack(spacing: 8) {
-                    Text("steady") // TODO: Replace with final app name
+                    Text("subtle")
                         .font(.system(size: 40, weight: .black, design: .rounded))
                         .foregroundStyle(AppColors.accent)
 

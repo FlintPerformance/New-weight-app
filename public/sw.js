@@ -1,5 +1,5 @@
 const BUILD = '__SW_VERSION__';
-const CACHE_NAME = `steady-${BUILD}`;
+const CACHE_NAME = `subtle-${BUILD}`;
 
 const PRECACHE = ['/', '/index.html'];
 
@@ -48,9 +48,9 @@ self.addEventListener('push', (e) => {
   try {
     data = e.data.json();
   } catch {
-    data = { title: 'Steady', body: e.data.text() };
+    data = { title: 'Subtle', body: e.data.text() };
   }
-  const title = data.title || 'Steady';
+  const title = data.title || 'Subtle';
   const options = {
     body: data.body || 'Time to log your weight!',
     icon: '/favicon.svg',

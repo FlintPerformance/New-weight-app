@@ -48,7 +48,7 @@ struct LaunchScreen: View {
             Color(.systemBackground)
                 .ignoresSafeArea()
             VStack(spacing: 8) {
-                Text("steady")
+                Text("subtle")
                     .font(.custom("System", size: 36, relativeTo: .largeTitle))
                     .fontWeight(.black)
                     .foregroundStyle(.accent)

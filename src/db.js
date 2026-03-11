@@ -4,7 +4,7 @@ let dbPromise;
 
 function getDB() {
   if (!dbPromise) {
-    dbPromise = openDB('steady-db', 2, {
+    dbPromise = openDB('subtle-db', 2, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           const weights = db.createObjectStore('weights', { keyPath: 'id' });

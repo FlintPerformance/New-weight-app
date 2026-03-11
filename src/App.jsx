@@ -57,7 +57,7 @@ export default function App() {
   const data = useLocalData(user?.id);
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState(null);
-  const [unit, setUnit] = useState(() => localStorage.getItem('steady-unit') || 'lb');
+  const [unit, setUnit] = useState(() => localStorage.getItem('subtle-unit') || 'lb');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showWeighIn, setShowWeighIn] = useState(false);
   const [celebrationData, setCelebrationData] = useState(null);
@@ -96,7 +96,7 @@ export default function App() {
 
   // Show onboarding for new users
   const checkOnboarding = useCallback(() => {
-    if (user && data.loaded && syncedOnce && data.weights.length === 0 && !localStorage.getItem('steady-onboarding-done')) {
+    if (user && data.loaded && syncedOnce && data.weights.length === 0 && !localStorage.getItem('subtle-onboarding-done')) {
       setShowOnboarding(true);
     }
   }, [user, data.loaded, syncedOnce, data.weights.length]);
@@ -109,7 +109,7 @@ export default function App() {
   }, [pendingInvite, user, navigate]);
 
   const completeOnboarding = useCallback(() => {
-    localStorage.setItem('steady-onboarding-done', '1');
+    localStorage.setItem('subtle-onboarding-done', '1');
     setShowOnboarding(false);
   }, []);
 
@@ -138,7 +138,7 @@ export default function App() {
 
   const changeUnit = useCallback((u) => {
     setUnit(u);
-    localStorage.setItem('steady-unit', u);
+    localStorage.setItem('subtle-unit', u);
   }, []);
 
   const openWeighIn = useCallback(() => setShowWeighIn(true), []);
@@ -189,7 +189,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="text-center">
-          <h1 className="font-logo text-4xl font-extrabold text-accent">steady</h1>
+          <h1 className="font-logo text-4xl font-extrabold text-accent">subtle</h1>
           <p className="text-cream/40 mt-2 font-body text-sm">Loading...</p>
         </div>
       </div>

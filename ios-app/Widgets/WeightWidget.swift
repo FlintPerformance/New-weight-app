@@ -25,7 +25,7 @@ struct WeightTimelineProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<WeightWidgetEntry>) -> Void) {
-        let entry = readLatestData() ?? placeholder(in: Context())
+        let entry = readLatestData() ?? WeightWidgetEntry(date: Date(), weight: 175.0, unit: "lb", streak: 5, goalProgress: 45, trend: [175, 174.5, 174.8, 174.2, 173.9])
         // Refresh every hour
         let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))

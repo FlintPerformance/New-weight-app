@@ -59,7 +59,7 @@ struct LaunchScreen: View {
                 Text("subtle")
                     .font(.custom("System", size: 36, relativeTo: .largeTitle))
                     .fontWeight(.black)
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(AppColors.accent)
                 Text("Loading...")
                     .font(.caption)
                     .foregroundStyle(.secondary)

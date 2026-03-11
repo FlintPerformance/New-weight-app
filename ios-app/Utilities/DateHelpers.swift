@@ -24,6 +24,10 @@ enum DateHelpers {
         dateFormatter.string(from: Date())
     }
 
+    static func formatDate(_ date: Date) -> String {
+        dateFormatter.string(from: date)
+    }
+
     static func daysAgo(_ n: Int) -> String {
         let date = Calendar.current.date(byAdding: .day, value: -n, to: Date()) ?? Date()
         return dateFormatter.string(from: date)

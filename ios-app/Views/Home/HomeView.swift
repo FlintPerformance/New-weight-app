@@ -4,6 +4,7 @@ import SwiftData
 
 struct HomeView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var auth: AuthViewModel
     @Query(sort: \WeightEntry.date, order: .reverse) private var weights: [WeightEntry]
     @Query(filter: #Predicate<Goal> { $0.isActive }, sort: \Goal.createdAt) private var activeGoals: [Goal]
     @Binding var showWeighIn: Bool
@@ -78,7 +79,7 @@ struct HomeView: View {
 
     private var greetingSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(DateHelpers.greeting(for: "User")) // TODO: use actual display name
+            Text(DateHelpers.greeting(for: auth.user?.displayName ?? "there"))
                 .font(.title2)
                 .fontWeight(.bold)
             if streak > 0 {

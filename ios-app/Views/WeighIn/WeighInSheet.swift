@@ -28,7 +28,7 @@ struct WeighInSheet: View {
     }
 
     private var hasMorningForDate: Bool {
-        let dateStr = DateHelpers.todayString() // TODO: format selected date
+        let dateStr = DateHelpers.formatDate(date)
         return weights.contains { $0.date == dateStr && $0.isMorning }
     }
 
@@ -199,7 +199,7 @@ struct WeighInSheet: View {
         }
 
         isSaving = true
-        let dateStr = DateHelpers.todayString() // TODO: format selected date
+        let dateStr = DateHelpers.formatDate(date)
         let entry = WeightEntry(weight: value, unit: appState.unit, date: dateStr, notes: notes, isMorning: isMorning)
         modelContext.insert(entry)
 

@@ -416,7 +416,7 @@ struct GoalFormSheet: View {
             for goal in existing { goal.isActive = false }
         }
 
-        let dateStr = DateHelpers.todayString() // TODO: format targetDate
+        let dateStr = DateHelpers.formatDate(targetDate)
         let goal = Goal(targetWeight: value, startWeight: startWeight, unit: appState.unit, targetDate: dateStr)
         modelContext.insert(goal)
         try? modelContext.save()

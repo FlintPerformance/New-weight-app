@@ -6,11 +6,12 @@ struct OnboardingView: View {
     @State private var currentPage = 0
 
     private let pages: [(icon: String, title: String, body: String, hint: String?)] = [
-        ("iphone.badge.plus", "Make It Yours", "Add this app to your home screen for the best experience. It works just like a native app!", "Pro tip: Tap Share → Add to Home Screen"),
-        ("scalemass.fill", "Step On, Log In", "Tap the + button to enter your weight. Toggle morning weight for the most accurate trend tracking.", "Pro tip: Same time each morning = best results!"),
-        ("chart.xyaxis.line", "Watch Your Progress", "Your dashboard shows your 7-day trend. Switch to candlestick mode for detailed daily ranges.", "Remember: focus on the trend, not daily ups and downs!"),
-        ("target", "Dream Big", "Set a target weight and date. We'll track your pace, celebrate milestones, and keep you on track.", nil),
-        ("person.3.fill", "Better Together", "Start or join a squad. Share wins, react to entries, and cheer each other on!", nil),
+        ("scalemass.fill", "Welcome to subtle", "A smarter way to track your weight. Log daily, see your trend, and stay on track — all in one place.", nil),
+        ("plus.circle.fill", "Log with one tap", "Hit the + button anytime to log your weight. Toggle morning weigh-in for the most accurate trend line.", "Pro tip: Same time each morning = best results!"),
+        ("house.fill", "Home is your dashboard", "See your current weight, 7-day trend chart, streak, consistency score, and goal progress at a glance.", nil),
+        ("chart.xyaxis.line", "Track your progress", "Dive deeper with charts, milestones, body composition, and weekly check-ins on the Progress tab.", "Focus on the trend, not daily fluctuations!"),
+        ("person.3.fill", "Squad up", "Start or join a squad to share weigh-ins with friends. React with emoji, drop comments, and compare trends.", nil),
+        ("heart.text.square.fill", "Health in one place", "Connect Apple Health to see steps, heart rate, sleep, calories, BMI, and body fat alongside your weight journey.", nil),
     ]
 
     var body: some View {

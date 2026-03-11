@@ -4,12 +4,16 @@ import SwiftData
 
 struct ProgressView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \WeightEntry.date, order: .reverse) private var weights: [WeightEntry]
     @Query(sort: \Goal.createdAt, order: .reverse) private var goals: [Goal]
 
     @State private var range: TimeRange = .thirtyDays
     @State private var showGoalForm = false
     @State private var showGoalDetails = false
+    @State private var editingEntry: WeightEntry?
+    @State private var showDeleteConfirm = false
+    @State private var entryToDelete: WeightEntry?
 
     enum TimeRange: String, CaseIterable {
         case sevenDays = "7d"
@@ -88,6 +92,20 @@ struct ProgressView: View {
             .navigationTitle("Progress")
             .sheet(isPresented: $showGoalForm) {
                 GoalFormSheet()
+            }
+            .sheet(item: $editingEntry) { entry in
+                EditEntrySheet(entry: entry)
+            }
+            .alert("Delete Entry?", isPresented: $showDeleteConfirm) {
+                Button("Delete", role: .destructive) {
+                    if let entry = entryToDelete {
+                        modelContext.delete(entry)
+                        try? modelContext.save()
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This weight entry will be permanently removed.")
             }
         }
     }
@@ -325,6 +343,10 @@ struct ProgressView: View {
                 .foregroundStyle(.secondary)
                 .tracking(1)
 
+            Text("Swipe left to edit or delete")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+
             ForEach(filteredWeights.prefix(50)) { entry in
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -349,6 +371,26 @@ struct ProgressView: View {
                         }
                     }
                     Spacer()
+
+                    // Edit / Delete buttons
+                    HStack(spacing: 12) {
+                        Button {
+                            editingEntry = entry
+                        } label: {
+                            Image(systemName: "pencil")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.accent)
+                        }
+
+                        Button {
+                            entryToDelete = entry
+                            showDeleteConfirm = true
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.danger)
+                        }
+                    }
                 }
                 .padding()
                 .background(.regularMaterial)
@@ -419,6 +461,65 @@ struct GoalFormSheet: View {
         let dateStr = DateHelpers.formatDate(targetDate)
         let goal = Goal(targetWeight: value, startWeight: startWeight, unit: appState.unit, targetDate: dateStr)
         modelContext.insert(goal)
+        try? modelContext.save()
+        dismiss()
+    }
+}
+
+// MARK: - Edit Entry Sheet
+
+struct EditEntrySheet: View {
+    @EnvironmentObject var appState: AppState
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    let entry: WeightEntry
+    @State private var weightText: String = ""
+    @State private var notesText: String = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Weight (\(appState.unit.rawValue))") {
+                    TextField("Weight", text: $weightText)
+                        .keyboardType(.decimalPad)
+                }
+                Section("Notes") {
+                    TextField("Optional notes", text: $notesText)
+                }
+                Section {
+                    HStack {
+                        Text("Date")
+                        Spacer()
+                        Text(DateHelpers.format(entry.date))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("Edit Entry")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { save() }
+                        .fontWeight(.semibold)
+                        .disabled(weightText.isEmpty)
+                }
+            }
+            .onAppear {
+                weightText = String(format: "%.1f", entry.weight)
+                notesText = entry.notes
+            }
+        }
+    }
+
+    private func save() {
+        guard let value = Double(weightText),
+              WeightConverter.isValid(value, unit: appState.unit) else { return }
+        entry.weight = value
+        entry.notes = notesText
         try? modelContext.save()
         dismiss()
     }

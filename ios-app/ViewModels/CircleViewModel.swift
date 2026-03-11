@@ -13,7 +13,7 @@ class CircleViewModel: ObservableObject {
 
     enum CircleTab: String, CaseIterable {
         case feed = "Feed"
-        case members = "Squad"
+        case members = "Members"
         case compare = "Compare"
     }
 

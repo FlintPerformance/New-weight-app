@@ -10,7 +10,7 @@ struct OnboardingView: View {
         ("scalemass.fill", "Step On, Log In", "Tap the + button to enter your weight. Toggle morning weight for the most accurate trend tracking.", "Pro tip: Same time each morning = best results!"),
         ("chart.xyaxis.line", "Watch Your Progress", "Your dashboard shows your 7-day trend. Switch to candlestick mode for detailed daily ranges.", "Remember: focus on the trend, not daily ups and downs!"),
         ("target", "Dream Big", "Set a target weight and date. We'll track your pace, celebrate milestones, and keep you on track.", nil),
-        ("person.3.fill", "Better Together", "Create or join circles with friends. Share wins, react to entries, and make weight predictions!", nil),
+        ("person.3.fill", "Better Together", "Start or join a squad. Share wins, react to entries, and cheer each other on!", nil),
     ]
 
     var body: some View {

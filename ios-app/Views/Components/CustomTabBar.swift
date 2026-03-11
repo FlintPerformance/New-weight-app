@@ -7,7 +7,7 @@ struct CustomTabBar: View {
     private let tabs: [(tab: MainTabView.Tab, icon: String, label: String)] = [
         (.home, "house.fill", "Home"),
         (.progress, "chart.xyaxis.line", "Progress"),
-        (.friends, "person.3.fill", "Friends"),
+        (.friends, "person.3.fill", "Squad"),
         (.health, "heart.text.square.fill", "Health"),
     ]
 

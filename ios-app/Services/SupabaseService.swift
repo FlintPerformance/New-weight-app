@@ -80,23 +80,3 @@ struct CommentCheerRow: Codable {
     let user_id: String
     let emoji: String
 }
-
-struct PredictionRow: Codable {
-    let id: String?
-    let user_id: String
-    let circle_id: String
-    let predicted_weight: Double
-    let start_weight: Double
-    let unit: String
-    let deadline: String
-    let message: String?
-    let resolved: Bool?
-    let actual_weight: Double?
-}
-
-struct PredictionVoteRow: Codable {
-    let id: String?
-    let prediction_id: String
-    let user_id: String
-    let outcome: String
-}

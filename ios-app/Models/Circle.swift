@@ -56,30 +56,6 @@ struct Comment: Identifiable, Codable {
     var reactions: [Reaction]
 }
 
-struct Prediction: Identifiable, Codable {
-    let id: String
-    let userId: String
-    let circleId: String
-    let displayName: String
-    let avatarUrl: String?
-    let predictedWeight: Double
-    let startWeight: Double
-    let unit: String
-    let deadline: Date
-    let message: String?
-    let createdAt: Date
-    let resolved: Bool
-    let actualWeight: Double?
-    var votes: [PredictionVote]
-}
-
-struct PredictionVote: Identifiable, Codable {
-    let id: String
-    let userId: String
-    let displayName: String
-    let outcome: String         // "nails_it", "overshoots", "falls_short", "crushes_it"
-}
-
 // MARK: - Available reactions
 
 enum ReactionType: String, CaseIterable {

@@ -26,12 +26,12 @@ struct FriendsView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.3), value: vm.circles.isEmpty)
-            .navigationTitle("Friends")
+            .navigationTitle("Squad")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
-                        Button("Start a Circle", systemImage: "plus.circle") { showCreate = true }
-                        Button("Join Friends", systemImage: "person.badge.plus") { showJoin = true }
+                        Button("Start a Squad", systemImage: "plus.circle") { showCreate = true }
+                        Button("Join a Squad", systemImage: "person.badge.plus") { showJoin = true }
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -53,12 +53,12 @@ struct FriendsView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
 
-            Text("No circles yet")
+            Text("No squad yet")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
 
-            Text("Create a circle and invite friends to share your progress, react to entries, and make predictions!")
+            Text("Start a squad and invite friends to share your progress, react to entries, and cheer each other on!")
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
@@ -68,7 +68,7 @@ struct FriendsView: View {
                 Button {
                     showCreate = true
                 } label: {
-                    Label("Start a Circle", systemImage: "plus.circle.fill")
+                    Label("Start a Squad", systemImage: "plus.circle.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -77,7 +77,7 @@ struct FriendsView: View {
                 Button {
                     showJoin = true
                 } label: {
-                    Label("Join Friends", systemImage: "person.badge.plus")
+                    Label("Join a Squad", systemImage: "person.badge.plus")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -127,7 +127,7 @@ struct FeedTabView: View {
 
     var body: some View {
         if vm.feed.isEmpty {
-            ContentUnavailableView("No activity yet", systemImage: "list.bullet", description: Text("Entries from your circle will show up here"))
+            ContentUnavailableView("No activity yet", systemImage: "list.bullet", description: Text("Entries from your squad will show up here"))
         } else {
             LazyVStack(spacing: 14) {
                 ForEach(vm.feed) { entry in
@@ -503,7 +503,7 @@ struct MembersTabView: View {
 
     var body: some View {
         if members.isEmpty {
-            ContentUnavailableView("No members yet", systemImage: "person.3.fill", description: Text("Invite friends to join your circle"))
+            ContentUnavailableView("No members yet", systemImage: "person.3.fill", description: Text("Invite friends to join your squad"))
                 .padding()
         } else {
             LazyVStack(spacing: 14) {
@@ -871,9 +871,9 @@ struct CreateCircleSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Circle name (e.g. Gym Buddies)", text: $name)
+                TextField("Squad name (e.g. Gym Buddies)", text: $name)
             }
-            .navigationTitle("Start a Circle")
+            .navigationTitle("Start a Squad")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -914,7 +914,7 @@ struct JoinCircleSheet: View {
                         .font(.caption)
                 }
             }
-            .navigationTitle("Join Friends")
+            .navigationTitle("Join a Squad")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

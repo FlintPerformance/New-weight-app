@@ -104,6 +104,19 @@ class WeightViewModel: ObservableObject {
         }
     }
 
+    /// 7-day Exponential Moving Average. The smoothing factor k = 2/(span+1)
+    /// gives recent days more influence while softening daily noise.
+    static func ema(data: [(date: String, weight: Double)], span: Int = 7) -> [(date: String, ema: Double)] {
+        guard let first = data.first else { return [] }
+        let k = 2.0 / (Double(span) + 1.0)
+        var prev = first.weight
+        return data.map { point in
+            let value = point.weight * k + prev * (1.0 - k)
+            prev = value
+            return (date: point.date, ema: value)
+        }
+    }
+
     var hasMorningWeightToday: Bool {
         let today = DateHelpers.todayString()
         return weights.contains { $0.date == today && $0.isMorning }

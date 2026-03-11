@@ -50,6 +50,21 @@ struct ProgressView: View {
         return byDate.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
     }
 
+    // Seed EMA with all available data, then slice to filtered range
+    private var emaData: [(date: String, ema: Double)] {
+        let allSorted = weights.sorted { $0.date < $1.date }
+        var byDate: [String: Double] = [:]
+        for entry in allSorted {
+            if entry.isMorning || byDate[entry.date] == nil {
+                byDate[entry.date] = entry.weight
+            }
+        }
+        let sorted = byDate.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+        let allEma = WeightViewModel.ema(data: sorted)
+        let chartDates = Set(chartData.map(\.date))
+        return allEma.filter { chartDates.contains($0.date) }
+    }
+
     private var stats: (count: Int, avg: Double, lowest: WeightEntry?, change: Double?)? {
         guard !filteredWeights.isEmpty else { return nil }
         let sorted = filteredWeights.sorted { $0.date < $1.date }
@@ -135,30 +150,36 @@ struct ProgressView: View {
 
     private var chartSection: some View {
         VStack(alignment: .leading) {
-            Chart(chartData, id: \.date) { point in
-                LineMark(
-                    x: .value("Date", point.date),
-                    y: .value("Weight", point.weight)
-                )
-                .foregroundStyle(AppColors.accent)
-                .lineStyle(StrokeStyle(lineWidth: 2))
-                .interpolationMethod(.catmullRom)
+            Chart {
+                // Raw weight data points (subtle dots)
+                ForEach(chartData, id: \.date) { point in
+                    PointMark(
+                        x: .value("Date", point.date),
+                        y: .value("Weight", point.weight)
+                    )
+                    .foregroundStyle(AppColors.accent.opacity(0.4))
+                    .symbolSize(point.date == chartData.last?.date ? 50 : 20)
+                }
 
-                AreaMark(
-                    x: .value("Date", point.date),
-                    y: .value("Weight", point.weight)
-                )
-                .foregroundStyle(
-                    LinearGradient(colors: [AppColors.accent.opacity(0.15), .clear], startPoint: .top, endPoint: .bottom)
-                )
-                .interpolationMethod(.catmullRom)
+                // 7-day EMA trend line
+                ForEach(emaData, id: \.date) { point in
+                    LineMark(
+                        x: .value("Date", point.date),
+                        y: .value("Weight", point.ema)
+                    )
+                    .foregroundStyle(AppColors.accent)
+                    .lineStyle(StrokeStyle(lineWidth: 2.5))
+                    .interpolationMethod(.catmullRom)
 
-                PointMark(
-                    x: .value("Date", point.date),
-                    y: .value("Weight", point.weight)
-                )
-                .foregroundStyle(AppColors.accent)
-                .symbolSize(point.date == chartData.last?.date ? 60 : 20)
+                    AreaMark(
+                        x: .value("Date", point.date),
+                        y: .value("Weight", point.ema)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(colors: [AppColors.accent.opacity(0.15), .clear], startPoint: .top, endPoint: .bottom)
+                    )
+                    .interpolationMethod(.catmullRom)
+                }
             }
             .chartYScale(domain: .automatic(includesZero: false))
             .chartXAxis {
@@ -172,10 +193,18 @@ struct ProgressView: View {
             }
             .frame(height: 200)
 
-            // Goal reference line annotation
-            if let goal = activeGoal {
-                HStack {
-                    Spacer()
+            // Legend + Goal
+            HStack {
+                HStack(spacing: 4) {
+                    SwiftUI.Circle().fill(AppColors.accent.opacity(0.4)).frame(width: 6, height: 6)
+                    Text("Weigh-ins").font(.caption2).foregroundStyle(.tertiary)
+                }
+                HStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 1).fill(AppColors.accent).frame(width: 14, height: 2)
+                    Text("7d Trend").font(.caption2).foregroundStyle(.tertiary)
+                }
+                Spacer()
+                if let goal = activeGoal {
                     Label("Goal: \(WeightConverter.format(goal.targetWeight, unit: appState.unit))", systemImage: "target")
                         .font(.caption2)
                         .foregroundStyle(AppColors.warning)

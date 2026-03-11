@@ -48,6 +48,25 @@ struct HomeView: View {
         return byDate.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
     }
 
+    // Use up to 30 days of data to seed the EMA, then show last 7 days
+    private var emaData: [(date: String, ema: Double)] {
+        let cutoff = DateHelpers.daysAgo(30)
+        let recent = weights.filter { $0.date >= cutoff }.sorted { $0.date < $1.date }
+        var byDate: [String: Double] = [:]
+        for entry in recent {
+            if entry.isMorning || byDate[entry.date] == nil {
+                byDate[entry.date] = entry.weight
+            }
+        }
+        let sorted = byDate.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+        let allEma = WeightViewModel.ema(data: sorted)
+        // Only show EMA points that overlap with the 7-day chart
+        let chartDates = Set(chartData.map(\.date))
+        return allEma.filter { chartDates.contains($0.date) }
+    }
+
+    private var currentEma: Double? { emaData.last?.ema }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -101,14 +120,22 @@ struct HomeView: View {
                     Text(WeightConverter.format(latest.weight, unit: appState.unit))
                         .font(.system(size: 44, weight: .black, design: .rounded))
 
-                    if let change = last30Change {
-                        Text("\(change > 0 ? "+" : "")\(String(format: "%.1f", change)) \(appState.unit.rawValue)")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(change < 0 ? AppColors.success : change > 0 ? AppColors.danger : .secondary)
-                        + Text(" 30d")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let change = last30Change {
+                            Text("\(change > 0 ? "+" : "")\(String(format: "%.1f", change)) \(appState.unit.rawValue)")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(change < 0 ? AppColors.success : change > 0 ? AppColors.danger : .secondary)
+                            + Text(" 30d")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let ema = currentEma {
+                            Text("Trend: \(WeightConverter.format(ema, unit: appState.unit))")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundStyle(AppColors.accent)
+                        }
                     }
                 }
             } else {
@@ -149,33 +176,39 @@ struct HomeView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            Chart(chartData, id: \.date) { point in
-                AreaMark(
-                    x: .value("Date", point.date),
-                    y: .value("Weight", point.weight)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [AppColors.accent.opacity(0.2), AppColors.accent.opacity(0)],
-                        startPoint: .top, endPoint: .bottom
+            Chart {
+                // Raw weight data points
+                ForEach(chartData, id: \.date) { point in
+                    PointMark(
+                        x: .value("Date", point.date),
+                        y: .value("Weight", point.weight)
                     )
-                )
-                .interpolationMethod(.catmullRom)
+                    .foregroundStyle(AppColors.accent.opacity(0.4))
+                    .symbolSize(point.date == chartData.last?.date ? 50 : 20)
+                }
 
-                LineMark(
-                    x: .value("Date", point.date),
-                    y: .value("Weight", point.weight)
-                )
-                .foregroundStyle(AppColors.accent)
-                .lineStyle(StrokeStyle(lineWidth: 2.5))
-                .interpolationMethod(.catmullRom)
+                // 7-day EMA trend line
+                ForEach(emaData, id: \.date) { point in
+                    LineMark(
+                        x: .value("Date", point.date),
+                        y: .value("Weight", point.ema)
+                    )
+                    .foregroundStyle(AppColors.accent)
+                    .lineStyle(StrokeStyle(lineWidth: 2.5))
+                    .interpolationMethod(.catmullRom)
 
-                PointMark(
-                    x: .value("Date", point.date),
-                    y: .value("Weight", point.weight)
-                )
-                .foregroundStyle(AppColors.accent)
-                .symbolSize(point.date == chartData.last?.date ? 80 : 30)
+                    AreaMark(
+                        x: .value("Date", point.date),
+                        y: .value("Weight", point.ema)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [AppColors.accent.opacity(0.2), AppColors.accent.opacity(0)],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+                }
             }
             .chartXAxis {
                 AxisMarks(values: .automatic) { value in
@@ -189,6 +222,17 @@ struct HomeView: View {
             }
             .chartYScale(domain: .automatic(includesZero: false))
             .frame(height: 200)
+
+            HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    SwiftUI.Circle().fill(AppColors.accent.opacity(0.4)).frame(width: 6, height: 6)
+                    Text("Weigh-ins").font(.caption2).foregroundStyle(.tertiary)
+                }
+                HStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 1).fill(AppColors.accent).frame(width: 14, height: 2)
+                    Text("7d Trend (EMA)").font(.caption2).foregroundStyle(.tertiary)
+                }
+            }
         }
         .padding()
         .background(.regularMaterial)

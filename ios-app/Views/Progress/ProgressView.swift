@@ -15,6 +15,8 @@ struct ProgressView: View {
     @State private var showDeleteConfirm = false
     @State private var entryToDelete: WeightEntry?
     @State private var selectedChartDate: String?
+    @State private var showBodyComp = false
+    @State private var showWeeklyCheckIn = false
 
     enum TimeRange: String, CaseIterable {
         case sevenDays = "7d"
@@ -109,6 +111,18 @@ struct ProgressView: View {
                         statsSection(stats)
                     }
 
+                    // Insights (predicted date, consistency, variance, alerts)
+                    InsightsSection()
+
+                    // Body Composition
+                    BodyCompositionCard { showBodyComp = true }
+
+                    // Weekly Check-In
+                    WeeklyCheckInCard { showWeeklyCheckIn = true }
+
+                    // Health Correlations
+                    HealthCorrelationCard()
+
                     // Entry list
                     entriesSection
                 }
@@ -120,6 +134,12 @@ struct ProgressView: View {
             }
             .sheet(item: $editingEntry) { entry in
                 EditEntrySheet(entry: entry)
+            }
+            .sheet(isPresented: $showBodyComp) {
+                BodyCompositionSheet()
+            }
+            .sheet(isPresented: $showWeeklyCheckIn) {
+                WeeklyCheckInSheet()
             }
             .alert("Delete Entry?", isPresented: $showDeleteConfirm) {
                 Button("Delete", role: .destructive) {

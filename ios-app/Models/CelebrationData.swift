@@ -6,4 +6,5 @@ struct CelebrationData: Identifiable {
     let unit: WeightUnit
     let date: String
     let isMorning: Bool
+    var milestones: [InsightsEngine.Milestone] = []
 }

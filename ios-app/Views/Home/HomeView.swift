@@ -103,10 +103,17 @@ struct HomeView: View {
                             .animation(.easeOut(duration: 0.4).delay(0.15), value: appeared)
                     }
 
+                    if let prediction = predictedDate {
+                        predictedGoalCard(prediction)
+                            .offset(y: appeared ? 0 : 20)
+                            .opacity(appeared ? 1 : 0)
+                            .animation(.easeOut(duration: 0.4).delay(0.2), value: appeared)
+                    }
+
                     quickActions
                         .offset(y: appeared ? 0 : 20)
                         .opacity(appeared ? 1 : 0)
-                        .animation(.easeOut(duration: 0.4).delay(0.2), value: appeared)
+                        .animation(.easeOut(duration: 0.4).delay(0.25), value: appeared)
                 }
                 .padding()
             }
@@ -177,10 +184,27 @@ struct HomeView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
+    private var consistencyScore: Int {
+        InsightsEngine.consistencyScore(dates: weights.map(\.date)).score
+    }
+
+    private var predictedDate: (date: Date, daysAway: Int, ratePerWeek: Double)? {
+        guard let goal = activeGoal else { return nil }
+        let sorted = weights.sorted { $0.date < $1.date }
+        var byDate: [String: Double] = [:]
+        for entry in sorted {
+            if entry.isMorning || byDate[entry.date] == nil {
+                byDate[entry.date] = entry.weight
+            }
+        }
+        let data = byDate.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+        return InsightsEngine.predictedGoalDate(weights: data, goal: (target: goal.targetWeight, start: goal.startWeight))
+    }
+
     private var statsRow: some View {
         HStack(spacing: 12) {
             StatCard(title: "Streak", value: "\(streak)", subtitle: streak == 1 ? "day" : "days", color: AppColors.accent)
-            StatCard(title: "Entries", value: "\(weights.count)", subtitle: "logged", color: .primary)
+            StatCard(title: "Consistency", value: "\(consistencyScore)%", subtitle: "30d", color: consistencyScore >= 80 ? AppColors.success : consistencyScore >= 50 ? AppColors.accent : AppColors.warning)
 
             if let goal = activeGoal, let latest {
                 let progress = goal.calculateProgress(currentWeight: latest.weight)
@@ -299,6 +323,30 @@ struct HomeView: View {
         .padding()
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func predictedGoalCard(_ prediction: (date: Date, daysAway: Int, ratePerWeek: Double)) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "calendar.badge.clock")
+                .font(.title2)
+                .foregroundStyle(AppColors.accent)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Predicted Goal Date")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(DateHelpers.format(DateHelpers.formatDate(prediction.date)))
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                Text("\(prediction.daysAway) days at \(String(format: "%.1f", abs(prediction.ratePerWeek))) \(appState.unit.rawValue)/wk")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            Spacer()
+        }
+        .padding()
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var quickActions: some View {

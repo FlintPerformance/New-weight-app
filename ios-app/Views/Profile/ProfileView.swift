@@ -7,6 +7,8 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \WeightEntry.date, order: .reverse) private var weights: [WeightEntry]
     @Query(sort: \Goal.createdAt, order: .reverse) private var goals: [Goal]
+    @Query(sort: \BodyComposition.date, order: .reverse) private var bodyComps: [BodyComposition]
+    @Query(sort: \WeeklyCheckIn.createdAt, order: .reverse) private var checkIns: [WeeklyCheckIn]
 
     @State private var showLogout = false
     @State private var isSyncing = false
@@ -120,11 +122,17 @@ struct ProfileView: View {
         }
     }
 
+    private var consistencyScore: Int {
+        InsightsEngine.consistencyScore(dates: weights.map(\.date)).score
+    }
+
     private var statsGrid: some View {
-        HStack(spacing: 12) {
-            StatCard(title: "Entries", value: "\(weights.count)", subtitle: "logged", color: .primary)
-            StatCard(title: "Streak", value: "\(streak)", subtitle: "days", color: AppColors.accent)
-            StatCard(title: "Tracking", value: "\(daysTracked)", subtitle: "days", color: .primary)
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                StatCard(title: "Entries", value: "\(weights.count)", subtitle: "logged", color: .primary)
+                StatCard(title: "Streak", value: "\(streak)", subtitle: "days", color: AppColors.accent)
+                StatCard(title: "Consistency", value: "\(consistencyScore)%", subtitle: "30d", color: consistencyScore >= 80 ? AppColors.success : AppColors.accent)
+            }
         }
         .listRowInsets(EdgeInsets())
         .listRowBackground(Color.clear)
@@ -232,7 +240,36 @@ struct ProfileView: View {
                 "active": goal.isActive ? "true" : "false"
             ]
         }
-        let export: [String: Any] = ["weights": weightData, "goals": goalData]
+        let bodyCompData = bodyComps.map { entry in
+            [
+                "id": entry.id,
+                "date": entry.date,
+                "bodyFatPercent": entry.bodyFatPercent.map { String($0) } ?? "",
+                "muscleMass": entry.muscleMass.map { String($0) } ?? "",
+                "waist": entry.waist.map { String($0) } ?? "",
+                "hips": entry.hips.map { String($0) } ?? "",
+                "chest": entry.chest.map { String($0) } ?? "",
+                "arms": entry.arms.map { String($0) } ?? "",
+                "thighs": entry.thighs.map { String($0) } ?? "",
+            ]
+        }
+        let checkInData = checkIns.map { entry in
+            [
+                "id": entry.id,
+                "weekOf": entry.weekOf,
+                "energy": String(entry.energyLevel),
+                "sleep": String(entry.sleepQuality),
+                "hunger": String(entry.hungerRating),
+                "stress": String(entry.stressLevel),
+                "notes": entry.notes,
+            ]
+        }
+        let export: [String: Any] = [
+            "weights": weightData,
+            "goals": goalData,
+            "bodyComposition": bodyCompData,
+            "weeklyCheckIns": checkInData,
+        ]
         guard let jsonData = try? JSONSerialization.data(withJSONObject: export, options: .prettyPrinted) else { return }
 
         let dateStr = DateHelpers.todayString()

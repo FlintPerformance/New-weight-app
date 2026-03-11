@@ -80,6 +80,25 @@ struct CelebrationView: View {
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.accent)
 
+                // Milestones
+                if !data.milestones.isEmpty {
+                    VStack(spacing: 6) {
+                        ForEach(Array(data.milestones.enumerated()), id: \.offset) { _, milestone in
+                            let msg = InsightsEngine.milestoneMessage(milestone, unit: data.unit)
+                            HStack(spacing: 8) {
+                                Image(systemName: "star.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.yellow)
+                                Text(msg.title)
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(AppColors.accent)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+
                 // Stats
                 HStack(spacing: 32) {
                     VStack {

@@ -236,10 +236,61 @@ struct WeighInSheet: View {
                 try? await HealthKitService.shared.saveWeight(value, unit: unit, date: date)
             }
 
-            onSuccess(CelebrationData(weight: value, unit: unit, date: dateStr, isMorning: isMorning))
+            // Detect milestones
+            let previousWeights = weights.map(\.weight)
+            let streak = computeStreak()
+            let longestStreak = UserDefaults.standard.integer(forKey: "longestStreak")
+            let goalInfo: (target: Double, start: Double, direction: WeightGoalDirection)? = {
+                guard let goal = activeGoals.first, let dir = goalDirection else { return nil }
+                return (target: goal.targetWeight, start: goal.startWeight, direction: dir)
+            }()
+
+            let milestones = InsightsEngine.detectMilestones(
+                latestWeight: value,
+                previousWeights: previousWeights,
+                streak: streak,
+                longestStreak: longestStreak,
+                totalEntries: weights.count + 1,
+                goal: goalInfo,
+                unit: unit
+            )
+
+            // Update longest streak record
+            if streak > longestStreak {
+                UserDefaults.standard.set(streak, forKey: "longestStreak")
+            }
+
+            // Send milestone notifications
+            if !milestones.isEmpty {
+                Task {
+                    for milestone in milestones {
+                        let msg = InsightsEngine.milestoneMessage(milestone, unit: unit)
+                        await NotificationService.shared.sendMilestoneNotification(title: msg.title, body: msg.body)
+                    }
+                }
+            }
+
+            var celebrationData = CelebrationData(weight: value, unit: unit, date: dateStr, isMorning: isMorning)
+            celebrationData.milestones = milestones
+            onSuccess(celebrationData)
         } catch {
             self.error = "Failed to save"
         }
         isSaving = false
+    }
+
+    private func computeStreak() -> Int {
+        let uniqueDates = Array(Set(weights.map(\.date))).sorted(by: >)
+        let today = DateHelpers.todayString()
+        let yesterday = DateHelpers.daysAgo(1)
+        guard !uniqueDates.isEmpty, uniqueDates[0] == today || uniqueDates[0] == yesterday else { return 0 }
+        var count = 1
+        for i in 1..<uniqueDates.count {
+            guard let prev = DateHelpers.date(from: uniqueDates[i - 1]),
+                  let curr = DateHelpers.date(from: uniqueDates[i]) else { break }
+            if Calendar.current.dateComponents([.day], from: curr, to: prev).day == 1 { count += 1 }
+            else { break }
+        }
+        return count
     }
 }

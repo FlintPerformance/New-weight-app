@@ -14,6 +14,8 @@ struct WeightApp: App {
                 WeightEntry.self,
                 Goal.self,
                 UserProfile.self,
+                BodyComposition.self,
+                WeeklyCheckIn.self,
             ])
             let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
             container = try ModelContainer(for: schema, configurations: [config])

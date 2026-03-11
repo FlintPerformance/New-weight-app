@@ -100,7 +100,7 @@ struct ProfileView: View {
 
     private var profileCard: some View {
         HStack(spacing: 16) {
-            Circle()
+            SwiftUI.Circle()
                 .fill(AppColors.accent.opacity(0.2))
                 .frame(width: 60, height: 60)
                 .overlay(
@@ -148,7 +148,7 @@ struct ProfileView: View {
             Spacer()
             HStack(spacing: 6) {
                 ForEach(AppColors.graphColors.prefix(4), id: \.hex) { item in
-                    Circle()
+                    SwiftUI.Circle()
                         .fill(item.color)
                         .frame(width: 24, height: 24)
                 }

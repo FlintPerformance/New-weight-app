@@ -9,6 +9,7 @@ struct HomeView: View {
     @Query(filter: #Predicate<Goal> { $0.isActive }, sort: \Goal.createdAt) private var activeGoals: [Goal]
     @Binding var showWeighIn: Bool
     @State private var selectedChartDate: String?
+    @State private var appeared = false
 
     private var latest: WeightEntry? { weights.first }
     private var activeGoal: Goal? { activeGoals.first }
@@ -81,26 +82,36 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    // Greeting
                     greetingSection
+                        .offset(y: appeared ? 0 : 20)
+                        .opacity(appeared ? 1 : 0)
 
-                    // Current weight card
                     weightCard
+                        .offset(y: appeared ? 0 : 20)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.easeOut(duration: 0.4).delay(0.05), value: appeared)
 
-                    // Stats row
                     statsRow
+                        .offset(y: appeared ? 0 : 20)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.easeOut(duration: 0.4).delay(0.1), value: appeared)
 
-                    // Weekly chart
                     if chartData.count > 1 {
                         weeklyChart
+                            .offset(y: appeared ? 0 : 20)
+                            .opacity(appeared ? 1 : 0)
+                            .animation(.easeOut(duration: 0.4).delay(0.15), value: appeared)
                     }
 
-                    // Quick actions
                     quickActions
+                        .offset(y: appeared ? 0 : 20)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.easeOut(duration: 0.4).delay(0.2), value: appeared)
                 }
                 .padding()
             }
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { appeared = true }
         }
     }
 

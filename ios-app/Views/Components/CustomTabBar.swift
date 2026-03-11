@@ -40,7 +40,10 @@ struct CustomTabBar: View {
 
     private func tabButton(_ tab: MainTabView.Tab, icon: String, label: String) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.15)) {
+            guard selectedTab != tab else { return }
+            let impact = UIImpactFeedbackGenerator(style: .light)
+            impact.impactOccurred()
+            withAnimation(.snappy(duration: 0.2)) {
                 selectedTab = tab
             }
         } label: {
@@ -48,6 +51,7 @@ struct CustomTabBar: View {
                 Image(systemName: icon)
                     .font(.system(size: 20))
                     .scaleEffect(selectedTab == tab ? 1.1 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
                 Text(label)
                     .font(.system(size: 10, weight: selectedTab == tab ? .semibold : .regular))
             }

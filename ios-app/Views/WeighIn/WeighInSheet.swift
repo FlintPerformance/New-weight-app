@@ -7,8 +7,14 @@ struct WeighInSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \WeightEntry.date, order: .reverse) private var weights: [WeightEntry]
+    @Query(filter: #Predicate<Goal> { $0.isActive }, sort: \Goal.createdAt) private var activeGoals: [Goal]
 
     let onSuccess: (CelebrationData) -> Void
+
+    private var goalDirection: WeightGoalDirection? {
+        guard let goal = activeGoals.first else { return nil }
+        return goal.targetWeight < goal.startWeight ? .lose : .gain
+    }
 
     @State private var weightText = ""
     @State private var date = Date()
@@ -83,10 +89,12 @@ struct WeighInSheet: View {
                 .foregroundStyle(.tertiary)
 
             if let diff {
-                Text("\(diff > 0 ? "+" : "")\(String(format: "%.1f", diff)) \(appState.unit.rawValue) from last\(diff < 0 ? " — nice!" : "")")
+                Text("\(diff > 0 ? "+" : "")\(String(format: "%.1f", diff)) \(appState.unit.rawValue) from last")
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundStyle(diff < 0 ? AppColors.success : diff > 0 ? AppColors.danger : .secondary)
+                    .foregroundStyle(AppColors.changeColor(diff, goalDirection: goalDirection))
+                    .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.15), value: weightText)
             }
         }
         .padding()
@@ -114,7 +122,14 @@ struct WeighInSheet: View {
             Slider(
                 value: Binding(
                     get: { parsedWeight ?? lastWeight },
-                    set: { weightText = String(format: "%.1f", $0) }
+                    set: { newVal in
+                        let oldTenth = Int((parsedWeight ?? lastWeight) * 10)
+                        let newTenth = Int(newVal * 10)
+                        if oldTenth != newTenth {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.4)
+                        }
+                        weightText = String(format: "%.1f", newVal)
+                    }
                 ),
                 in: (lastWeight - 3)...(lastWeight + 3),
                 step: 0.1

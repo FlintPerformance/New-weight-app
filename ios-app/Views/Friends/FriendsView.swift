@@ -19,10 +19,13 @@ struct FriendsView: View {
             Group {
                 if vm.circles.isEmpty && !vm.isLoading {
                     emptyState
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 } else {
                     circleContent
+                        .transition(.opacity)
                 }
             }
+            .animation(.easeInOut(duration: 0.3), value: vm.circles.isEmpty)
             .navigationTitle("Friends")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -97,17 +100,20 @@ struct FriendsView: View {
 
             // Tab content
             ScrollView {
-                switch vm.selectedTab {
-                case .feed:
-                    FeedTabView(feed: vm.feed)
-                case .predictions:
-                    PredictionsTabView(predictions: vm.predictions)
-                case .members:
-                    MembersTabView(members: vm.members, feed: vm.feed, goalDirection: goalDirection)
-                case .compare:
-                    CompareTabView(goalDirection: goalDirection)
-                        .environmentObject(vm)
+                Group {
+                    switch vm.selectedTab {
+                    case .feed:
+                        FeedTabView(feed: vm.feed)
+                    case .predictions:
+                        PredictionsTabView(predictions: vm.predictions)
+                    case .members:
+                        MembersTabView(members: vm.members, feed: vm.feed, goalDirection: goalDirection)
+                    case .compare:
+                        CompareTabView(goalDirection: goalDirection)
+                            .environmentObject(vm)
+                    }
                 }
+                .animation(.snappy(duration: 0.25), value: vm.selectedTab)
             }
         }
     }

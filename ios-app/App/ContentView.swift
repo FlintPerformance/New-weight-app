@@ -24,6 +24,9 @@ struct ContentView: View {
                 )
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: auth.isLoading)
+        .animation(.easeInOut(duration: 0.3), value: auth.isAuthenticated)
+        .animation(.easeInOut(duration: 0.3), value: appState.showOnboarding)
         .sheet(isPresented: $showWeighIn) {
             WeighInSheet { data in
                 showWeighIn = false
@@ -96,6 +99,7 @@ struct MainTabView: View {
                 ProfileView()
                     .tag(Tab.profile)
             }
+            .animation(.snappy(duration: 0.25), value: selectedTab)
 
             // Custom Tab Bar with FAB
             CustomTabBar(

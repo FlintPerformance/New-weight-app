@@ -141,7 +141,7 @@ struct ProgressView: View {
         HStack(spacing: 4) {
             ForEach(TimeRange.allCases, id: \.self) { r in
                 Button(r.rawValue) {
-                    withAnimation { range = r }
+                    withAnimation(.snappy(duration: 0.3)) { range = r }
                 }
                 .font(.caption)
                 .fontWeight(.medium)
@@ -282,11 +282,13 @@ struct ProgressView: View {
                             .trim(from: 0, to: Double(progress.percentage) / 100)
                             .stroke(AppColors.accent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                             .rotationEffect(.degrees(-90))
+                            .animation(.easeOut(duration: 0.8), value: progress.percentage)
                         Text("\(progress.percentage)%")
                             .font(.subheadline)
                             .fontWeight(.bold)
                             .fontDesign(.rounded)
                             .foregroundStyle(AppColors.accent)
+                            .contentTransition(.numericText())
                     }
                     .frame(width: 56, height: 56)
 
@@ -314,7 +316,9 @@ struct ProgressView: View {
                 .background(.regularMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .onTapGesture {
-                    withAnimation { showGoalDetails.toggle() }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        showGoalDetails.toggle()
+                    }
                 }
 
             } else {

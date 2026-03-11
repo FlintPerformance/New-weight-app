@@ -11,6 +11,10 @@ struct HomeView: View {
 
     private var latest: WeightEntry? { weights.first }
     private var activeGoal: Goal? { activeGoals.first }
+    private var goalDirection: Goal.Direction? {
+        guard let goal = activeGoal else { return nil }
+        return goal.targetWeight < goal.startWeight ? .lose : .gain
+    }
 
     private var streak: Int {
         guard !weights.isEmpty else { return 0 }
@@ -125,7 +129,7 @@ struct HomeView: View {
                             Text("\(change > 0 ? "+" : "")\(String(format: "%.1f", change)) \(appState.unit.rawValue)")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                                .foregroundStyle(change < 0 ? AppColors.success : change > 0 ? AppColors.danger : .secondary)
+                                .foregroundStyle(AppColors.changeColor(change, goalDirection: goalDirection))
                             + Text(" 30d")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)

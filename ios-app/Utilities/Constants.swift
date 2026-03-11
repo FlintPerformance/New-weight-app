@@ -7,6 +7,20 @@ enum AppColors {
     static let danger = Color(hex: "#EF4444")
     static let warning = Color(hex: "#E5A63E")
 
+    /// Returns green/red based on whether the change aligns with the goal direction.
+    /// When gaining, positive change is good. When losing (or no goal), negative change is good.
+    static func changeColor(_ change: Double, goalDirection: Goal.Direction? = nil) -> Color {
+        guard change != 0 else { return .secondary }
+        let isGood: Bool
+        switch goalDirection {
+        case .gain:
+            isGood = change > 0
+        case .lose, .none:
+            isGood = change < 0
+        }
+        return isGood ? success : danger
+    }
+
     static let graphColors: [(color: Color, hex: String, label: String)] = [
         (Color(hex: "#2B9B8F"), "#2B9B8F", "Teal"),
         (Color(hex: "#3b82f6"), "#3b82f6", "Blue"),
@@ -60,12 +74,19 @@ enum StreakMessages {
         }
     }
 
-    static func celebrationMessage(streak: Int, diff: Double?) -> String {
+    static func celebrationMessage(streak: Int, diff: Double?, goalDirection: Goal.Direction? = nil) -> String {
         if streak >= 14 { return "Absolutely unstoppable!" }
         if streak >= 7 { return "You're on fire!" }
         if streak >= 3 { return "Keep it rolling!" }
-        if let diff, diff < -0.5 { return "Trending down — nice!" }
-        if let diff, diff < 0 { return "Every bit counts!" }
+        if let diff {
+            let movingRight: Bool
+            switch goalDirection {
+            case .gain: movingRight = diff > 0
+            case .lose, .none: movingRight = diff < 0
+            }
+            if movingRight && abs(diff) > 0.5 { return "Trending in the right direction!" }
+            if movingRight { return "Every bit counts!" }
+        }
         return "Logged! You got this!"
     }
 }

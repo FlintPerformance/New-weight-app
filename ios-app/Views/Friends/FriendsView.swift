@@ -328,10 +328,8 @@ struct MemberCard: View {
     }
 
     private func changeColor(_ change: Double?) -> Color {
-        guard let change else { return .secondary }
-        if change < 0 { return AppColors.success }
-        if change > 0 { return AppColors.danger }
-        return .secondary
+        guard let change, change != 0 else { return .secondary }
+        return AppColors.changeColor(change)
     }
 }
 
@@ -613,7 +611,7 @@ struct CompareLegendRow: View {
                 Text("\(change > 0 ? "+" : "")\(String(format: "%.1f", change))")
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundStyle(change < 0 ? AppColors.success : change > 0 ? AppColors.danger : .secondary)
+                    .foregroundStyle(AppColors.changeColor(change))
             }
         }
         .padding(.horizontal)

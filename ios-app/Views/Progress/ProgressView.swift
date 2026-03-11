@@ -32,6 +32,10 @@ struct ProgressView: View {
     }
 
     private var activeGoal: Goal? { goals.first { $0.isActive } }
+    private var goalDirection: Goal.Direction? {
+        guard let goal = activeGoal else { return nil }
+        return goal.targetWeight < goal.startWeight ? .lose : .gain
+    }
 
     private var filteredWeights: [WeightEntry] {
         guard let days = range.days else { return weights }
@@ -348,7 +352,7 @@ struct ProgressView: View {
             }
             if let change = s.change {
                 miniStat("Progress", "\(change > 0 ? "+" : "")\(String(format: "%.1f", change)) \(appState.unit.rawValue)",
-                         color: change < 0 ? AppColors.success : change > 0 ? AppColors.danger : .secondary)
+                         color: AppColors.changeColor(change, goalDirection: goalDirection))
             }
         }
     }

@@ -37,6 +37,11 @@ struct CelebrationView: View {
         return data.weight - prev
     }
 
+    private var goalDirection: Goal.Direction? {
+        guard let goal = activeGoals.first else { return nil }
+        return goal.targetWeight < goal.startWeight ? .lose : .gain
+    }
+
     private var goalProgress: Int? {
         guard let goal = activeGoals.first, let latest = weights.first else { return nil }
         let total = abs(goal.startWeight - goal.targetWeight)
@@ -66,11 +71,11 @@ struct CelebrationView: View {
                     Text("\(diff > 0 ? "+" : "")\(String(format: "%.1f", diff)) \(data.unit.rawValue)")
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundStyle(diff < 0 ? AppColors.success : diff > 0 ? AppColors.danger : .secondary)
+                        .foregroundStyle(AppColors.changeColor(diff, goalDirection: goalDirection))
                 }
 
                 // Message
-                Text(StreakMessages.celebrationMessage(streak: streak, diff: diff))
+                Text(StreakMessages.celebrationMessage(streak: streak, diff: diff, goalDirection: goalDirection))
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.accent)

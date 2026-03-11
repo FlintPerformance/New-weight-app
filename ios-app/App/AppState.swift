@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import Combine
 
 /// Global app state shared across views

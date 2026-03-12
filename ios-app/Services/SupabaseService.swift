@@ -66,7 +66,7 @@ struct CheerRow: Codable {
     let emoji: String
 }
 
-struct CommentRow: Codable {
+struct CommentRecord: Codable {
     let id: String?
     let entry_id: String
     let user_id: String

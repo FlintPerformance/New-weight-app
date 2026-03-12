@@ -202,7 +202,7 @@ class CircleViewModel: ObservableObject {
                 .value) ?? []
 
             // Fetch comments for these entries
-            let commentRows: [CommentRow] = entryIds.isEmpty ? [] : (try? await SupabaseService.client
+            let commentRows: [CommentRecord] = entryIds.isEmpty ? [] : (try? await SupabaseService.client
                 .from("comments")
                 .select()
                 .in("entry_id", values: entryIds)
@@ -352,7 +352,7 @@ class CircleViewModel: ObservableObject {
             let insert: [[String: String]] = [
                 ["entry_id": entryId, "user_id": userId, "text": trimmed]
             ]
-            let inserted: [CommentRow] = try await SupabaseService.client
+            let inserted: [CommentRecord] = try await SupabaseService.client
                 .from("comments")
                 .insert(insert)
                 .select()

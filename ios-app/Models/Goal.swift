@@ -55,10 +55,19 @@ extension Goal {
 
     func calculateProgress(currentWeight: Double) -> Progress {
         let total = abs(startWeight - targetWeight)
-        let current = abs(startWeight - currentWeight)
+        let direction: Direction = targetWeight < startWeight ? .lose : .gain
+
+        // Directional progress: only count movement toward the goal
+        let rawMove: Double
+        switch direction {
+        case .lose:
+            rawMove = startWeight - currentWeight   // positive when losing
+        case .gain:
+            rawMove = currentWeight - startWeight   // positive when gaining
+        }
+        let current = max(0, rawMove) // clamp to 0 if moving wrong way
         let pct = total == 0 ? 100 : min(100, Int((current / total) * 100))
         let remaining = targetWeight - currentWeight
-        let direction: Direction = targetWeight < startWeight ? .lose : .gain
 
         let startMs = DateHelpers.date(from: startDate)?.timeIntervalSince1970 ?? 0
         let targetMs = DateHelpers.date(from: targetDate)?.timeIntervalSince1970 ?? 0

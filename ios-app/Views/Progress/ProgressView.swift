@@ -14,7 +14,7 @@ struct ProgressTabView: View {
     @State private var editingEntry: WeightEntry?
     @State private var showDeleteConfirm = false
     @State private var entryToDelete: WeightEntry?
-    @State private var selectedChartDate: String?
+    @State private var selectedChartDate: Date?
     @State private var showBodyComp = false
     @State private var showWeeklyCheckIn = false
 
@@ -46,8 +46,8 @@ struct ProgressTabView: View {
         return weights.filter { $0.date >= cutoff }
     }
 
-    /// Daily average weight for the chart line
-    private var chartData: [(date: String, weight: Double)] {
+    /// Daily average weight for the chart line (Date-based for smooth scrubbing)
+    private var chartData: [(date: Date, weight: Double)] {
         let sorted = filteredWeights.sorted { $0.date < $1.date }
         var sums: [String: Double] = [:]
         var counts: [String: Int] = [:]
@@ -55,8 +55,9 @@ struct ProgressTabView: View {
             sums[entry.date, default: 0] += entry.weight
             counts[entry.date, default: 0] += 1
         }
-        return sums.keys.sorted().map { date in
-            (date, sums[date]! / Double(counts[date]!))
+        return sums.keys.sorted().compactMap { dateStr in
+            guard let d = DateHelpers.date(from: dateStr) else { return nil }
+            return (d, sums[dateStr]! / Double(counts[dateStr]!))
         }
     }
 
@@ -80,7 +81,7 @@ struct ProgressTabView: View {
     }
 
     // Seed EMA with all available data (using daily averages), then slice to filtered range
-    private var emaData: [(date: String, ema: Double)] {
+    private var emaData: [(date: Date, ema: Double)] {
         let allSorted = weights.sorted { $0.date < $1.date }
         var sums: [String: Double] = [:]
         var counts: [String: Int] = [:]
@@ -88,12 +89,16 @@ struct ProgressTabView: View {
             sums[entry.date, default: 0] += entry.weight
             counts[entry.date, default: 0] += 1
         }
-        let sorted = sums.keys.sorted().map { date in
+        let sorted: [(String, Double)] = sums.keys.sorted().map { date in
             (date, sums[date]! / Double(counts[date]!))
         }
         let allEma = WeightViewModel.ema(data: sorted)
-        let chartDates = Set(chartData.map(\.date))
-        return allEma.filter { chartDates.contains($0.date) }
+        let chartDateStrs = Set(filteredWeights.map(\.date))
+        return allEma.compactMap { point in
+            guard chartDateStrs.contains(point.date),
+                  let d = DateHelpers.date(from: point.date) else { return nil }
+            return (d, point.ema)
+        }
     }
 
     private var chartYDomain: ClosedRange<Double> {
@@ -101,15 +106,13 @@ struct ProgressTabView: View {
         return ChartHelpers.yDomain(for: allValues)
     }
 
-    /// X-axis domain padded so the line spans edge-to-edge
-    private var chartXDomain: ClosedRange<String> {
+    /// X-axis Date domain padded so the line spans edge-to-edge
+    private var chartXDomain: ClosedRange<Date> {
         guard let first = chartData.first?.date, let last = chartData.last?.date else {
-            return "0"..."1"
+            return Date()...Date()
         }
-        // Pad by one day on each side
-        let lo = DateHelpers.offsetDate(first, days: -1)
-        let hi = DateHelpers.offsetDate(last, days: 1)
-        return lo...hi
+        let pad: TimeInterval = 86400 * 0.5 // half day padding
+        return first.addingTimeInterval(-pad)...last.addingTimeInterval(pad)
     }
 
     private var stats: (count: Int, avg: Double, lowest: WeightEntry?, change: Double?)? {
@@ -119,6 +122,24 @@ struct ProgressTabView: View {
         let lowest = filteredWeights.min(by: { $0.weight < $1.weight })
         let change = officialSorted.count >= 2 ? officialSorted.last!.value - officialSorted.first!.value : nil
         return (filteredWeights.count, avg, lowest, change)
+    }
+
+    // MARK: - Selection helpers
+
+    /// Find the nearest chart data point for the selected date
+    private var selectedWeight: Double? {
+        guard let sel = selectedChartDate else { return nil }
+        return chartData.min(by: { abs($0.date.timeIntervalSince(sel)) < abs($1.date.timeIntervalSince(sel)) })?.weight
+    }
+
+    private var selectedEma: Double? {
+        guard let sel = selectedChartDate else { return nil }
+        return emaData.min(by: { abs($0.date.timeIntervalSince(sel)) < abs($1.date.timeIntervalSince(sel)) })?.ema
+    }
+
+    private var selectedDateString: String? {
+        guard let sel = selectedChartDate else { return nil }
+        return DateHelpers.formatShort(DateHelpers.formatDate(sel))
     }
 
     var body: some View {
@@ -210,20 +231,10 @@ struct ProgressTabView: View {
         .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
-    private var selectedWeight: Double? {
-        guard let date = selectedChartDate else { return nil }
-        return chartData.first(where: { $0.date == date })?.weight
-    }
-
-    private var selectedEma: Double? {
-        guard let date = selectedChartDate else { return nil }
-        return emaData.first(where: { $0.date == date })?.ema
-    }
-
     private var chartSection: some View {
         VStack(alignment: .leading) {
             // Selection readout
-            if let date = selectedChartDate {
+            if selectedChartDate != nil {
                 HStack(spacing: 8) {
                     if let w = selectedWeight {
                         Text(WeightConverter.format(w, unit: appState.unit))
@@ -237,26 +248,27 @@ struct ProgressTabView: View {
                             .foregroundStyle(appState.chartColor)
                     }
                     Spacer()
-                    Text(DateHelpers.formatShort(date))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if let ds = selectedDateString {
+                        Text(ds)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .transition(.opacity)
                 .padding(.bottom, 4)
             }
 
             Chart {
-                // Oscillation bars: thin bars from EMA to actual weight
-                ForEach(chartData, id: \.date) { point in
-                    if let ema = emaData.first(where: { $0.date == point.date })?.ema {
-                        BarMark(
+                // Oscillation bars: thin RuleMarks from EMA to daily average
+                ForEach(Array(chartData.enumerated()), id: \.offset) { _, point in
+                    if let ema = emaData.min(by: { abs($0.date.timeIntervalSince(point.date)) < abs($1.date.timeIntervalSince(point.date)) })?.ema {
+                        RuleMark(
                             x: .value("Date", point.date),
                             yStart: .value("EMA", ema),
-                            yEnd: .value("Weight", point.weight),
-                            width: 3
+                            yEnd: .value("Weight", point.weight)
                         )
                         .foregroundStyle(appState.chartColor.opacity(0.35))
-                        .clipShape(Capsule())
+                        .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
                     }
 
                     // Small dot at the actual weight end
@@ -269,7 +281,7 @@ struct ProgressTabView: View {
                 }
 
                 // 7-day EMA trend line
-                ForEach(emaData, id: \.date) { point in
+                ForEach(Array(emaData.enumerated()), id: \.offset) { _, point in
                     LineMark(
                         x: .value("Date", point.date),
                         y: .value("Weight", point.ema)
@@ -289,8 +301,8 @@ struct ProgressTabView: View {
                 }
 
                 // Selection vertical rule
-                if let date = selectedChartDate {
-                    RuleMark(x: .value("Selected", date))
+                if let sel = selectedChartDate {
+                    RuleMark(x: .value("Selected", sel))
                         .foregroundStyle(appState.chartColor.opacity(0.5))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                 }
@@ -301,15 +313,14 @@ struct ProgressTabView: View {
             .chartXAxis {
                 AxisMarks(values: .automatic) { value in
                     AxisValueLabel {
-                        if let str = value.as(String.self) {
-                            Text(DateHelpers.formatShort(str)).font(.caption2)
+                        if let date = value.as(Date.self) {
+                            Text(DateHelpers.formatShort(DateHelpers.formatDate(date))).font(.caption2)
                         }
                     }
                 }
             }
             .frame(height: 200)
-            .animation(.snappy(duration: 0.3), value: chartData.map(\.date))
-            .animation(.snappy(duration: 0.2), value: selectedChartDate)
+            .animation(.smooth(duration: 0.3), value: chartData.count)
 
             // Legend + Goal
             HStack {

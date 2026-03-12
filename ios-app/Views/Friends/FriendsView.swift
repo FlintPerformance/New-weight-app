@@ -673,7 +673,7 @@ struct MemberCard: View {
 struct CompareTabView: View {
     @EnvironmentObject var vm: CircleViewModel
     let goalDirection: WeightGoalDirection?
-    @State private var selectedDate: String?
+    @State private var selectedDate: Date?
 
     private static let memberColors: [Color] = [AppColors.accent, AppColors.success, AppColors.warning, .purple, .orange, .pink]
 
@@ -684,7 +684,7 @@ struct CompareTabView: View {
 
     private struct ChartPoint: Identifiable {
         let id = UUID()
-        let date: String
+        let date: Date
         let weight: Double
         let name: String
     }
@@ -696,15 +696,18 @@ struct CompareTabView: View {
                 .filter { $0.userId == member.userId }
                 .sorted { $0.date < $1.date }
 
-            var byDate: [String: Double] = [:]
+            // Daily averages per member
+            var sums: [String: Double] = [:]
+            var counts: [String: Int] = [:]
             for entry in entries {
-                if entry.isMorning || byDate[entry.date] == nil {
-                    byDate[entry.date] = entry.weight
-                }
+                sums[entry.date, default: 0] += entry.weight
+                counts[entry.date, default: 0] += 1
             }
 
-            for (date, weight) in byDate.sorted(by: { $0.key < $1.key }) {
-                points.append(ChartPoint(date: date, weight: weight, name: member.displayName))
+            for dateStr in sums.keys.sorted() {
+                guard let d = DateHelpers.date(from: dateStr) else { continue }
+                let avg = sums[dateStr]! / Double(counts[dateStr]!)
+                points.append(ChartPoint(date: d, weight: avg, name: member.displayName))
             }
         }
         return points
@@ -720,11 +723,27 @@ struct CompareTabView: View {
         ChartHelpers.yDomain(for: chartPoints.map(\.weight))
     }
 
+    private var compareXDomain: ClosedRange<Date> {
+        let dates = chartPoints.map(\.date)
+        guard let first = dates.min(), let last = dates.max() else {
+            return Date()...Date()
+        }
+        let pad: TimeInterval = 86400 * 0.5
+        return first.addingTimeInterval(-pad)...last.addingTimeInterval(pad)
+    }
+
     private var selectedPointsText: String? {
-        guard let date = selectedDate else { return nil }
-        let points = chartPoints.filter { $0.date == date }
-        guard !points.isEmpty else { return nil }
-        return points.map { "\($0.name): \(String(format: "%.1f", $0.weight))" }.joined(separator: "  ·  ")
+        guard let sel = selectedDate else { return nil }
+        // Find nearest points per member within 12 hours
+        var texts: [String] = []
+        for member in vm.members {
+            let memberPoints = chartPoints.filter { $0.name == member.displayName }
+            if let nearest = memberPoints.min(by: { abs($0.date.timeIntervalSince(sel)) < abs($1.date.timeIntervalSince(sel)) }),
+               abs(nearest.date.timeIntervalSince(sel)) < 86400 {
+                texts.append("\(nearest.name): \(String(format: "%.1f", nearest.weight))")
+            }
+        }
+        return texts.isEmpty ? nil : texts.joined(separator: "  ·  ")
     }
 
     var body: some View {
@@ -735,9 +754,9 @@ struct CompareTabView: View {
             VStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     // Selection readout
-                    if let date = selectedDate {
+                    if let sel = selectedDate {
                         HStack {
-                            Text(DateHelpers.formatShort(date))
+                            Text(DateHelpers.formatShort(DateHelpers.formatDate(sel)))
                                 .font(.caption)
                                 .fontWeight(.medium)
                             Spacer()
@@ -758,19 +777,12 @@ struct CompareTabView: View {
                                 y: .value("Weight", point.weight)
                             )
                             .foregroundStyle(by: .value("Member", point.name))
-                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .lineStyle(StrokeStyle(lineWidth: 2.5))
                             .interpolationMethod(.catmullRom)
-
-                            PointMark(
-                                x: .value("Date", point.date),
-                                y: .value("Weight", point.weight)
-                            )
-                            .foregroundStyle(by: .value("Member", point.name))
-                            .symbolSize(20)
                         }
 
-                        if let date = selectedDate {
-                            RuleMark(x: .value("Selected", date))
+                        if let sel = selectedDate {
+                            RuleMark(x: .value("Selected", sel))
                                 .foregroundStyle(.secondary.opacity(0.4))
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                         }
@@ -781,18 +793,18 @@ struct CompareTabView: View {
                         range: vm.members.map { colorFor($0) }
                     )
                     .chartYScale(domain: compareYDomain)
+                    .chartXScale(domain: compareXDomain)
                     .chartXAxis {
                         AxisMarks(values: .automatic) { value in
                             AxisValueLabel {
-                                if let str = value.as(String.self) {
-                                    Text(DateHelpers.formatShort(str)).font(.caption2)
+                                if let date = value.as(Date.self) {
+                                    Text(DateHelpers.formatShort(DateHelpers.formatDate(date))).font(.caption2)
                                 }
                             }
                         }
                     }
                     .chartLegend(position: .bottom, spacing: 12)
                     .frame(height: 260)
-                    .animation(.snappy(duration: 0.2), value: selectedDate)
                 }
                 .padding()
                 .background(.regularMaterial)

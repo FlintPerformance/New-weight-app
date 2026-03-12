@@ -9,7 +9,7 @@ struct HomeView: View {
     @Query(filter: #Predicate<Goal> { $0.isActive }, sort: \Goal.createdAt) private var activeGoals: [Goal]
     @Binding var showWeighIn: Bool
     var onNavigateToProgress: (() -> Void)?
-    @State private var selectedChartDate: String?
+    @State private var selectedChartDate: Date?
     @State private var appeared = false
     @State private var showProfile = false
 
@@ -31,8 +31,8 @@ struct HomeView: View {
         return filtered.last!.weight - filtered.first!.weight
     }
 
-    /// Daily average weight for the chart line
-    private var chartData: [(date: String, weight: Double)] {
+    /// Daily average weight (Date-based for smooth scrubbing)
+    private var chartData: [(date: Date, weight: Double)] {
         let cutoff = DateHelpers.daysAgo(7)
         let recent = weights.filter { $0.date >= cutoff }.sorted { $0.date < $1.date }
         var sums: [String: Double] = [:]
@@ -41,13 +41,14 @@ struct HomeView: View {
             sums[entry.date, default: 0] += entry.weight
             counts[entry.date, default: 0] += 1
         }
-        return sums.keys.sorted().map { date in
-            (date, sums[date]! / Double(counts[date]!))
+        return sums.keys.sorted().compactMap { dateStr in
+            guard let d = DateHelpers.date(from: dateStr) else { return nil }
+            return (d, sums[dateStr]! / Double(counts[dateStr]!))
         }
     }
 
     // Use up to 30 days of data to seed the EMA (daily averages), then show last 7 days
-    private var emaData: [(date: String, ema: Double)] {
+    private var emaData: [(date: Date, ema: Double)] {
         let cutoff = DateHelpers.daysAgo(30)
         let recent = weights.filter { $0.date >= cutoff }.sorted { $0.date < $1.date }
         var sums: [String: Double] = [:]
@@ -56,12 +57,16 @@ struct HomeView: View {
             sums[entry.date, default: 0] += entry.weight
             counts[entry.date, default: 0] += 1
         }
-        let sorted = sums.keys.sorted().map { date in
+        let sorted: [(String, Double)] = sums.keys.sorted().map { date in
             (date, sums[date]! / Double(counts[date]!))
         }
         let allEma = WeightViewModel.ema(data: sorted)
-        let chartDates = Set(chartData.map(\.date))
-        return allEma.filter { chartDates.contains($0.date) }
+        let chartDateStrs = Set(self.chartData.map { DateHelpers.formatDate($0.date) })
+        return allEma.compactMap { point in
+            guard chartDateStrs.contains(point.date),
+                  let d = DateHelpers.date(from: point.date) else { return nil }
+            return (d, point.ema)
+        }
     }
 
     private var currentEma: Double? { emaData.last?.ema }
@@ -71,13 +76,53 @@ struct HomeView: View {
         return ChartHelpers.yDomain(for: allValues)
     }
 
-    private var chartXDomain: ClosedRange<String> {
+    private var chartXDomain: ClosedRange<Date> {
         guard let first = chartData.first?.date, let last = chartData.last?.date else {
-            return "0"..."1"
+            return Date()...Date()
         }
-        let lo = DateHelpers.offsetDate(first, days: -1)
-        let hi = DateHelpers.offsetDate(last, days: 1)
-        return lo...hi
+        let pad: TimeInterval = 86400 * 0.5
+        return first.addingTimeInterval(-pad)...last.addingTimeInterval(pad)
+    }
+
+    /// Official weight per day (morning or first entry) for progress calculations
+    private var officialWeightByDate: [String: Double] {
+        let sorted = weights.sorted { $0.date < $1.date }
+        var byDate: [String: Double] = [:]
+        for entry in sorted {
+            if entry.isMorning || byDate[entry.date] == nil {
+                byDate[entry.date] = entry.weight
+            }
+        }
+        return byDate
+    }
+
+    private var latestOfficialWeight: Double? {
+        let dates = officialWeightByDate.keys.sorted()
+        guard let last = dates.last else { return nil }
+        return officialWeightByDate[last]
+    }
+
+    private var predictedDate: (date: Date, daysAway: Int, ratePerWeek: Double)? {
+        guard let goal = activeGoal else { return nil }
+        let data = officialWeightByDate.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+        return InsightsEngine.predictedGoalDate(weights: data, goal: (target: goal.targetWeight, start: goal.startWeight))
+    }
+
+    // MARK: - Selection helpers
+
+    private var selectedChartWeight: Double? {
+        guard let sel = selectedChartDate else { return nil }
+        return chartData.min(by: { abs($0.date.timeIntervalSince(sel)) < abs($1.date.timeIntervalSince(sel)) })?.weight
+    }
+
+    private var selectedChartEma: Double? {
+        guard let sel = selectedChartDate else { return nil }
+        return emaData.min(by: { abs($0.date.timeIntervalSince(sel)) < abs($1.date.timeIntervalSince(sel)) })?.ema
+    }
+
+    private var selectedDateString: String? {
+        guard let sel = selectedChartDate else { return nil }
+        return DateHelpers.formatShort(DateHelpers.formatDate(sel))
     }
 
     var body: some View {
@@ -211,30 +256,6 @@ struct HomeView: View {
         InsightsEngine.consistencyScore(dates: weights.map(\.date)).score
     }
 
-    /// Official weight per day (morning or first entry) for progress calculations
-    private var officialWeightByDate: [String: Double] {
-        let sorted = weights.sorted { $0.date < $1.date }
-        var byDate: [String: Double] = [:]
-        for entry in sorted {
-            if entry.isMorning || byDate[entry.date] == nil {
-                byDate[entry.date] = entry.weight
-            }
-        }
-        return byDate
-    }
-
-    private var latestOfficialWeight: Double? {
-        let dates = officialWeightByDate.keys.sorted()
-        guard let last = dates.last else { return nil }
-        return officialWeightByDate[last]
-    }
-
-    private var predictedDate: (date: Date, daysAway: Int, ratePerWeek: Double)? {
-        guard let goal = activeGoal else { return nil }
-        let data = officialWeightByDate.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
-        return InsightsEngine.predictedGoalDate(weights: data, goal: (target: goal.targetWeight, start: goal.startWeight))
-    }
-
     private var statsRow: some View {
         HStack(spacing: 12) {
             StatCard(title: "Streak", value: "\(streak)", subtitle: streak == 1 ? "day" : "days", color: AppColors.accent)
@@ -249,16 +270,6 @@ struct HomeView: View {
         }
     }
 
-    private var selectedChartWeight: Double? {
-        guard let date = selectedChartDate else { return nil }
-        return chartData.first(where: { $0.date == date })?.weight
-    }
-
-    private var selectedChartEma: Double? {
-        guard let date = selectedChartDate else { return nil }
-        return emaData.first(where: { $0.date == date })?.ema
-    }
-
     private var weeklyChart: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -266,7 +277,7 @@ struct HomeView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                if let date = selectedChartDate {
+                if selectedChartDate != nil {
                     HStack(spacing: 8) {
                         if let w = selectedChartWeight {
                             Text(WeightConverter.format(w, unit: appState.unit))
@@ -279,26 +290,27 @@ struct HomeView: View {
                                 .font(.caption2)
                                 .foregroundStyle(appState.chartColor)
                         }
-                        Text(DateHelpers.formatShort(date))
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                        if let ds = selectedDateString {
+                            Text(ds)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
                     .transition(.opacity)
                 }
             }
 
             Chart {
-                // Oscillation bars: thin bars from EMA to actual weight
-                ForEach(chartData, id: \.date) { point in
-                    if let ema = emaData.first(where: { $0.date == point.date })?.ema {
-                        BarMark(
+                // Oscillation bars: thin RuleMarks from EMA to daily average
+                ForEach(Array(chartData.enumerated()), id: \.offset) { _, point in
+                    if let ema = emaData.min(by: { abs($0.date.timeIntervalSince(point.date)) < abs($1.date.timeIntervalSince(point.date)) })?.ema {
+                        RuleMark(
                             x: .value("Date", point.date),
                             yStart: .value("EMA", ema),
-                            yEnd: .value("Weight", point.weight),
-                            width: 3
+                            yEnd: .value("Weight", point.weight)
                         )
                         .foregroundStyle(appState.chartColor.opacity(0.35))
-                        .clipShape(Capsule())
+                        .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
                     }
 
                     PointMark(
@@ -310,7 +322,7 @@ struct HomeView: View {
                 }
 
                 // 7-day EMA trend line
-                ForEach(emaData, id: \.date) { point in
+                ForEach(Array(emaData.enumerated()), id: \.offset) { _, point in
                     LineMark(
                         x: .value("Date", point.date),
                         y: .value("Weight", point.ema)
@@ -333,8 +345,8 @@ struct HomeView: View {
                 }
 
                 // Selection vertical rule
-                if let date = selectedChartDate {
-                    RuleMark(x: .value("Selected", date))
+                if let sel = selectedChartDate {
+                    RuleMark(x: .value("Selected", sel))
                         .foregroundStyle(appState.chartColor.opacity(0.5))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                 }
@@ -343,8 +355,8 @@ struct HomeView: View {
             .chartXAxis {
                 AxisMarks(values: .automatic) { value in
                     AxisValueLabel {
-                        if let str = value.as(String.self) {
-                            Text(DateHelpers.formatShort(str))
+                        if let date = value.as(Date.self) {
+                            Text(DateHelpers.formatShort(DateHelpers.formatDate(date)))
                                 .font(.caption2)
                         }
                     }
@@ -353,8 +365,7 @@ struct HomeView: View {
             .chartYScale(domain: chartYDomain)
             .chartXScale(domain: chartXDomain)
             .frame(height: 200)
-            .animation(.snappy(duration: 0.3), value: chartData.map(\.date))
-            .animation(.snappy(duration: 0.2), value: selectedChartDate)
+            .animation(.smooth(duration: 0.3), value: chartData.count)
 
             HStack(spacing: 12) {
                 HStack(spacing: 4) {

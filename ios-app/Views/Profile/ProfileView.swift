@@ -292,18 +292,19 @@ struct ProfileView: View {
                 "active": goal.isActive ? "true" : "false"
             ]
         }
-        let bodyCompData = bodyComps.map { entry in
-            [
+        let bodyCompData: [[String: String]] = bodyComps.map { entry in
+            var dict: [String: String] = [
                 "id": entry.id,
                 "date": entry.date,
-                "bodyFatPercent": entry.bodyFatPercent.map { String($0) } ?? "",
-                "muscleMass": entry.muscleMass.map { String($0) } ?? "",
-                "waist": entry.waist.map { String($0) } ?? "",
-                "hips": entry.hips.map { String($0) } ?? "",
-                "chest": entry.chest.map { String($0) } ?? "",
-                "arms": entry.arms.map { String($0) } ?? "",
-                "thighs": entry.thighs.map { String($0) } ?? "",
             ]
+            dict["bodyFatPercent"] = entry.bodyFatPercent.map { String($0) } ?? ""
+            dict["muscleMass"] = entry.muscleMass.map { String($0) } ?? ""
+            dict["waist"] = entry.waist.map { String($0) } ?? ""
+            dict["hips"] = entry.hips.map { String($0) } ?? ""
+            dict["chest"] = entry.chest.map { String($0) } ?? ""
+            dict["arms"] = entry.arms.map { String($0) } ?? ""
+            dict["thighs"] = entry.thighs.map { String($0) } ?? ""
+            return dict
         }
         let checkInData = checkIns.map { entry in
             [

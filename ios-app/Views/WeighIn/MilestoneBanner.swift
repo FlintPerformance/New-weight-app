@@ -3,7 +3,7 @@ import SwiftUI
 /// A banner that slides down from the top when a milestone is detected.
 struct MilestoneBanner: View {
     let title: String
-    let body: String
+    let message: String
     let onDismiss: () -> Void
 
     @State private var isVisible = false
@@ -20,7 +20,7 @@ struct MilestoneBanner: View {
                     Text(title)
                         .font(.subheadline)
                         .fontWeight(.bold)
-                    Text(self.body)
+                    Text(message)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

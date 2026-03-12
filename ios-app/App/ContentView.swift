@@ -120,7 +120,7 @@ struct MainTabView: View {
                 })
                     .tag(Tab.home)
 
-                ProgressView()
+                ProgressTabView()
                     .tag(Tab.progress)
 
                 // Placeholder — FAB handles this

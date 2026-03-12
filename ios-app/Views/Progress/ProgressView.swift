@@ -2,7 +2,7 @@ import SwiftUI
 import Charts
 import SwiftData
 
-struct ProgressView: View {
+struct ProgressTabView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \WeightEntry.date, order: .reverse) private var weights: [WeightEntry]

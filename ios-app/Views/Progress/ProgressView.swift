@@ -46,7 +46,22 @@ struct ProgressTabView: View {
         return weights.filter { $0.date >= cutoff }
     }
 
+    /// Daily average weight for the chart line
     private var chartData: [(date: String, weight: Double)] {
+        let sorted = filteredWeights.sorted { $0.date < $1.date }
+        var sums: [String: Double] = [:]
+        var counts: [String: Int] = [:]
+        for entry in sorted {
+            sums[entry.date, default: 0] += entry.weight
+            counts[entry.date, default: 0] += 1
+        }
+        return sums.keys.sorted().map { date in
+            (date, sums[date]! / Double(counts[date]!))
+        }
+    }
+
+    /// Morning or first entry per day — used for progress, goal %, and change stats
+    private var officialWeightByDate: [String: Double] {
         let sorted = filteredWeights.sorted { $0.date < $1.date }
         var byDate: [String: Double] = [:]
         for entry in sorted {
@@ -54,19 +69,28 @@ struct ProgressTabView: View {
                 byDate[entry.date] = entry.weight
             }
         }
-        return byDate.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+        return byDate
     }
 
-    // Seed EMA with all available data, then slice to filtered range
+    /// Latest official weight (morning/first) for goal progress
+    private var latestOfficialWeight: Double? {
+        let dates = officialWeightByDate.keys.sorted()
+        guard let last = dates.last else { return nil }
+        return officialWeightByDate[last]
+    }
+
+    // Seed EMA with all available data (using daily averages), then slice to filtered range
     private var emaData: [(date: String, ema: Double)] {
         let allSorted = weights.sorted { $0.date < $1.date }
-        var byDate: [String: Double] = [:]
+        var sums: [String: Double] = [:]
+        var counts: [String: Int] = [:]
         for entry in allSorted {
-            if entry.isMorning || byDate[entry.date] == nil {
-                byDate[entry.date] = entry.weight
-            }
+            sums[entry.date, default: 0] += entry.weight
+            counts[entry.date, default: 0] += 1
         }
-        let sorted = byDate.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+        let sorted = sums.keys.sorted().map { date in
+            (date, sums[date]! / Double(counts[date]!))
+        }
         let allEma = WeightViewModel.ema(data: sorted)
         let chartDates = Set(chartData.map(\.date))
         return allEma.filter { chartDates.contains($0.date) }
@@ -77,12 +101,23 @@ struct ProgressTabView: View {
         return ChartHelpers.yDomain(for: allValues)
     }
 
+    /// X-axis domain padded so the line spans edge-to-edge
+    private var chartXDomain: ClosedRange<String> {
+        guard let first = chartData.first?.date, let last = chartData.last?.date else {
+            return "0"..."1"
+        }
+        // Pad by one day on each side
+        let lo = DateHelpers.offsetDate(first, days: -1)
+        let hi = DateHelpers.offsetDate(last, days: 1)
+        return lo...hi
+    }
+
     private var stats: (count: Int, avg: Double, lowest: WeightEntry?, change: Double?)? {
         guard !filteredWeights.isEmpty else { return nil }
-        let sorted = filteredWeights.sorted { $0.date < $1.date }
-        let avg = sorted.map(\.weight).reduce(0, +) / Double(sorted.count)
-        let lowest = sorted.min(by: { $0.weight < $1.weight })
-        let change = sorted.count >= 2 ? sorted.last!.weight - sorted.first!.weight : nil
+        let officialSorted = officialWeightByDate.sorted { $0.key < $1.key }
+        let avg = officialSorted.map(\.value).reduce(0, +) / Double(officialSorted.count)
+        let lowest = filteredWeights.min(by: { $0.weight < $1.weight })
+        let change = officialSorted.count >= 2 ? officialSorted.last!.value - officialSorted.first!.value : nil
         return (filteredWeights.count, avg, lowest, change)
     }
 
@@ -102,8 +137,8 @@ struct ProgressTabView: View {
                     goalSection
 
                     // Goal details (expandable)
-                    if showGoalDetails, let goal = activeGoal, let latest = weights.first {
-                        goalDetailsSection(goal: goal, latest: latest)
+                    if showGoalDetails, let goal = activeGoal, let officialWeight = latestOfficialWeight {
+                        goalDetailsSection(goal: goal, currentWeight: officialWeight)
                     }
 
                     // Stats
@@ -211,14 +246,26 @@ struct ProgressTabView: View {
             }
 
             Chart {
-                // Raw weight data points (subtle dots)
+                // Oscillation bars: thin bars from EMA to actual weight
                 ForEach(chartData, id: \.date) { point in
+                    if let ema = emaData.first(where: { $0.date == point.date })?.ema {
+                        BarMark(
+                            x: .value("Date", point.date),
+                            yStart: .value("EMA", ema),
+                            yEnd: .value("Weight", point.weight),
+                            width: 3
+                        )
+                        .foregroundStyle(appState.chartColor.opacity(0.35))
+                        .clipShape(Capsule())
+                    }
+
+                    // Small dot at the actual weight end
                     PointMark(
                         x: .value("Date", point.date),
                         y: .value("Weight", point.weight)
                     )
-                    .foregroundStyle(appState.chartColor.opacity(0.4))
-                    .symbolSize(point.date == chartData.last?.date ? 50 : 20)
+                    .foregroundStyle(appState.chartColor.opacity(0.5))
+                    .symbolSize(point.date == chartData.last?.date ? 40 : 16)
                 }
 
                 // 7-day EMA trend line
@@ -250,6 +297,7 @@ struct ProgressTabView: View {
             }
             .chartXSelection(value: $selectedChartDate)
             .chartYScale(domain: chartYDomain)
+            .chartXScale(domain: chartXDomain)
             .chartXAxis {
                 AxisMarks(values: .automatic) { value in
                     AxisValueLabel {
@@ -260,13 +308,14 @@ struct ProgressTabView: View {
                 }
             }
             .frame(height: 200)
+            .animation(.snappy(duration: 0.3), value: chartData.map(\.date))
             .animation(.snappy(duration: 0.2), value: selectedChartDate)
 
             // Legend + Goal
             HStack {
                 HStack(spacing: 4) {
-                    SwiftUI.Circle().fill(appState.chartColor.opacity(0.4)).frame(width: 6, height: 6)
-                    Text("Weigh-ins").font(.caption2).foregroundStyle(.tertiary)
+                    RoundedRectangle(cornerRadius: 1).fill(appState.chartColor.opacity(0.35)).frame(width: 3, height: 10)
+                    Text("Daily Avg").font(.caption2).foregroundStyle(.tertiary)
                 }
                 HStack(spacing: 4) {
                     RoundedRectangle(cornerRadius: 1).fill(appState.chartColor).frame(width: 14, height: 2)
@@ -287,8 +336,8 @@ struct ProgressTabView: View {
 
     private var goalSection: some View {
         Group {
-            if let goal = activeGoal, let latest = weights.first {
-                let progress = goal.calculateProgress(currentWeight: latest.weight)
+            if let goal = activeGoal, let officialWeight = latestOfficialWeight {
+                let progress = goal.calculateProgress(currentWeight: officialWeight)
 
                 HStack(spacing: 16) {
                     // Mini ring
@@ -363,8 +412,8 @@ struct ProgressTabView: View {
         }
     }
 
-    private func goalDetailsSection(goal: Goal, latest: WeightEntry) -> some View {
-        let progress = goal.calculateProgress(currentWeight: latest.weight)
+    private func goalDetailsSection(goal: Goal, currentWeight: Double) -> some View {
+        let progress = goal.calculateProgress(currentWeight: currentWeight)
 
         return VStack(spacing: 12) {
             // Timeline

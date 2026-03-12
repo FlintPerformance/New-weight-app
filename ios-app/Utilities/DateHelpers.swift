@@ -59,6 +59,15 @@ enum DateHelpers {
         return "\(days / 7)w ago"
     }
 
+    /// Offset a "yyyy-MM-dd" date string by a number of days, returning another string.
+    static func offsetDate(_ dateStr: String, days: Int) -> String {
+        guard let d = date(from: dateStr),
+              let offset = Calendar.current.date(byAdding: .day, value: days, to: d) else {
+            return dateStr
+        }
+        return dateFormatter.string(from: offset)
+    }
+
     static func greeting(for name: String) -> String {
         let hour = Calendar.current.component(.hour, from: Date())
         let first = name.components(separatedBy: " ").first ?? name

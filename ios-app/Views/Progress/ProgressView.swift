@@ -199,7 +199,7 @@ struct ProgressView: View {
                     if let ema = selectedEma {
                         Text("Trend \(WeightConverter.format(ema, unit: appState.unit))")
                             .font(.caption)
-                            .foregroundStyle(AppColors.accent)
+                            .foregroundStyle(appState.chartColor)
                     }
                     Spacer()
                     Text(DateHelpers.formatShort(date))
@@ -217,7 +217,7 @@ struct ProgressView: View {
                         x: .value("Date", point.date),
                         y: .value("Weight", point.weight)
                     )
-                    .foregroundStyle(AppColors.accent.opacity(0.4))
+                    .foregroundStyle(appState.chartColor.opacity(0.4))
                     .symbolSize(point.date == chartData.last?.date ? 50 : 20)
                 }
 
@@ -227,7 +227,7 @@ struct ProgressView: View {
                         x: .value("Date", point.date),
                         y: .value("Weight", point.ema)
                     )
-                    .foregroundStyle(AppColors.accent)
+                    .foregroundStyle(appState.chartColor)
                     .lineStyle(StrokeStyle(lineWidth: 2.5))
                     .interpolationMethod(.catmullRom)
 
@@ -236,7 +236,7 @@ struct ProgressView: View {
                         y: .value("Weight", point.ema)
                     )
                     .foregroundStyle(
-                        LinearGradient(colors: [AppColors.accent.opacity(0.15), .clear], startPoint: .top, endPoint: .bottom)
+                        LinearGradient(colors: [appState.chartColor.opacity(0.15), .clear], startPoint: .top, endPoint: .bottom)
                     )
                     .interpolationMethod(.catmullRom)
                 }
@@ -244,7 +244,7 @@ struct ProgressView: View {
                 // Selection vertical rule
                 if let date = selectedChartDate {
                     RuleMark(x: .value("Selected", date))
-                        .foregroundStyle(AppColors.accent.opacity(0.5))
+                        .foregroundStyle(appState.chartColor.opacity(0.5))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                 }
             }
@@ -265,11 +265,11 @@ struct ProgressView: View {
             // Legend + Goal
             HStack {
                 HStack(spacing: 4) {
-                    SwiftUI.Circle().fill(AppColors.accent.opacity(0.4)).frame(width: 6, height: 6)
+                    SwiftUI.Circle().fill(appState.chartColor.opacity(0.4)).frame(width: 6, height: 6)
                     Text("Weigh-ins").font(.caption2).foregroundStyle(.tertiary)
                 }
                 HStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 1).fill(AppColors.accent).frame(width: 14, height: 2)
+                    RoundedRectangle(cornerRadius: 1).fill(appState.chartColor).frame(width: 14, height: 2)
                     Text("7d Trend").font(.caption2).foregroundStyle(.tertiary)
                 }
                 Spacer()

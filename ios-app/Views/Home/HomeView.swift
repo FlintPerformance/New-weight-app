@@ -8,6 +8,7 @@ struct HomeView: View {
     @Query(sort: \WeightEntry.date, order: .reverse) private var weights: [WeightEntry]
     @Query(filter: #Predicate<Goal> { $0.isActive }, sort: \Goal.createdAt) private var activeGoals: [Goal]
     @Binding var showWeighIn: Bool
+    var onNavigateToProgress: (() -> Void)?
     @State private var selectedChartDate: String?
     @State private var appeared = false
     @State private var showProfile = false
@@ -20,19 +21,7 @@ struct HomeView: View {
     }
 
     private var streak: Int {
-        guard !weights.isEmpty else { return 0 }
-        let uniqueDates = Array(Set(weights.map(\.date))).sorted(by: >)
-        let today = DateHelpers.todayString()
-        let yesterday = DateHelpers.daysAgo(1)
-        guard !uniqueDates.isEmpty, uniqueDates[0] == today || uniqueDates[0] == yesterday else { return 0 }
-        var count = 1
-        for i in 1..<uniqueDates.count {
-            guard let prev = DateHelpers.date(from: uniqueDates[i - 1]),
-                  let curr = DateHelpers.date(from: uniqueDates[i]) else { break }
-            if Calendar.current.dateComponents([.day], from: curr, to: prev).day == 1 { count += 1 }
-            else { break }
-        }
-        return count
+        StreakCalculator.calculate(from: weights.map(\.date))
     }
 
     private var last30Change: Double? {
@@ -265,7 +254,7 @@ struct HomeView: View {
                         if let ema = selectedChartEma {
                             Text("Trend \(WeightConverter.format(ema, unit: appState.unit))")
                                 .font(.caption2)
-                                .foregroundStyle(AppColors.accent)
+                                .foregroundStyle(appState.chartColor)
                         }
                         Text(DateHelpers.formatShort(date))
                             .font(.caption2)
@@ -282,7 +271,7 @@ struct HomeView: View {
                         x: .value("Date", point.date),
                         y: .value("Weight", point.weight)
                     )
-                    .foregroundStyle(AppColors.accent.opacity(0.4))
+                    .foregroundStyle(appState.chartColor.opacity(0.4))
                     .symbolSize(point.date == chartData.last?.date ? 50 : 20)
                 }
 
@@ -292,7 +281,7 @@ struct HomeView: View {
                         x: .value("Date", point.date),
                         y: .value("Weight", point.ema)
                     )
-                    .foregroundStyle(AppColors.accent)
+                    .foregroundStyle(appState.chartColor)
                     .lineStyle(StrokeStyle(lineWidth: 2.5))
                     .interpolationMethod(.catmullRom)
 
@@ -302,7 +291,7 @@ struct HomeView: View {
                     )
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [AppColors.accent.opacity(0.2), AppColors.accent.opacity(0)],
+                            colors: [appState.chartColor.opacity(0.2), appState.chartColor.opacity(0)],
                             startPoint: .top, endPoint: .bottom
                         )
                     )
@@ -312,7 +301,7 @@ struct HomeView: View {
                 // Selection vertical rule
                 if let date = selectedChartDate {
                     RuleMark(x: .value("Selected", date))
-                        .foregroundStyle(AppColors.accent.opacity(0.5))
+                        .foregroundStyle(appState.chartColor.opacity(0.5))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                 }
             }
@@ -333,11 +322,11 @@ struct HomeView: View {
 
             HStack(spacing: 12) {
                 HStack(spacing: 4) {
-                    SwiftUI.Circle().fill(AppColors.accent.opacity(0.4)).frame(width: 6, height: 6)
+                    SwiftUI.Circle().fill(appState.chartColor.opacity(0.4)).frame(width: 6, height: 6)
                     Text("Weigh-ins").font(.caption2).foregroundStyle(.tertiary)
                 }
                 HStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 1).fill(AppColors.accent).frame(width: 14, height: 2)
+                    RoundedRectangle(cornerRadius: 1).fill(appState.chartColor).frame(width: 14, height: 2)
                     Text("7d Trend (EMA)").font(.caption2).foregroundStyle(.tertiary)
                 }
             }
@@ -374,7 +363,7 @@ struct HomeView: View {
     private var quickActions: some View {
         HStack(spacing: 12) {
             Button {
-                // Navigate to progress — handled by tab
+                onNavigateToProgress?()
             } label: {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("My Progress")

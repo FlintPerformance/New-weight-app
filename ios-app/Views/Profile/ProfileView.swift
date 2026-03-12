@@ -11,25 +11,15 @@ struct ProfileView: View {
     @Query(sort: \WeeklyCheckIn.createdAt, order: .reverse) private var checkIns: [WeeklyCheckIn]
 
     @State private var showLogout = false
+    @State private var showStartFresh = false
     @State private var isSyncing = false
     @State private var showImporter = false
     @State private var healthKitConnected = false
+    @State private var showColorPicker = false
     @AppStorage("daily-reminders-enabled") private var remindersEnabled = false
 
     private var streak: Int {
-        let uniqueDates = Array(Set(weights.map(\.date))).sorted(by: >)
-        guard !uniqueDates.isEmpty else { return 0 }
-        let today = DateHelpers.todayString()
-        let yesterday = DateHelpers.daysAgo(1)
-        guard uniqueDates[0] == today || uniqueDates[0] == yesterday else { return 0 }
-        var count = 1
-        for i in 1..<uniqueDates.count {
-            guard let prev = DateHelpers.date(from: uniqueDates[i - 1]),
-                  let curr = DateHelpers.date(from: uniqueDates[i]) else { break }
-            if Calendar.current.dateComponents([.day], from: curr, to: prev).day == 1 { count += 1 }
-            else { break }
-        }
-        return count
+        StreakCalculator.calculate(from: weights.map(\.date))
     }
 
     private var daysTracked: Int {
@@ -70,7 +60,7 @@ struct ProfileView: View {
                         .disabled(isSyncing)
                     Button("Back Up My Data") { exportData() }
                     Button("Restore From Backup") { importData() }
-                    Button("Start Fresh", role: .destructive) { }
+                    Button("Start Fresh", role: .destructive) { showStartFresh = true }
                 }
 
                 // Account
@@ -93,6 +83,12 @@ struct ProfileView: View {
         .alert("Log Out?", isPresented: $showLogout) {
             Button("Log Out", role: .destructive) { auth.signOut() }
             Button("Cancel", role: .cancel) { }
+        }
+        .alert("Start Fresh?", isPresented: $showStartFresh) {
+            Button("Delete Everything", role: .destructive) { startFresh() }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will permanently delete all your weight entries, goals, body composition data, and check-ins from this device. This cannot be undone.")
         }
     }
 
@@ -149,20 +145,69 @@ struct ProfileView: View {
     }
 
     private var graphColorPicker: some View {
-        HStack {
-            Text("Chart Color")
-            Spacer()
-            HStack(spacing: 6) {
-                ForEach(AppColors.graphColors.prefix(4), id: \.hex) { item in
+        Button {
+            showColorPicker = true
+        } label: {
+            HStack {
+                Text("Chart Color")
+                    .foregroundStyle(.primary)
+                Spacer()
+                HStack(spacing: 6) {
                     SwiftUI.Circle()
-                        .fill(item.color)
+                        .fill(appState.chartColor)
                         .frame(width: 24, height: 24)
+                        .overlay(
+                            SwiftUI.Circle()
+                                .stroke(Color.primary.opacity(0.2), lineWidth: 1)
+                        )
+                    Text(AppColors.graphColors.first(where: { $0.hex == appState.chartColorHex })?.label ?? "Custom")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
-                Text("+\(AppColors.graphColors.count - 4)")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
             }
         }
+        .sheet(isPresented: $showColorPicker) {
+            chartColorPickerSheet
+        }
+    }
+
+    private var chartColorPickerSheet: some View {
+        NavigationStack {
+            List {
+                ForEach(AppColors.graphColors, id: \.hex) { item in
+                    Button {
+                        appState.changeChartColor(hex: item.hex, color: item.color)
+                        showColorPicker = false
+                    } label: {
+                        HStack(spacing: 12) {
+                            SwiftUI.Circle()
+                                .fill(item.color)
+                                .frame(width: 28, height: 28)
+                            Text(item.label)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if appState.chartColorHex == item.hex {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(AppColors.accent)
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Chart Color")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { showColorPicker = false }
+                        .fontWeight(.medium)
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 
     private var healthKitRow: some View {
@@ -208,12 +253,21 @@ struct ProfileView: View {
     private func sync() async {
         guard let userId = auth.user?.id else { return }
         isSyncing = true
+        appState.syncError = nil
         defer { isSyncing = false }
         do {
             try await SyncService.shared.sync(userId: userId, modelContext: modelContext)
         } catch {
-            print("Sync failed: \(error)")
+            appState.syncError = "Sync failed. Check your connection and try again."
         }
+    }
+
+    private func startFresh() {
+        for entry in weights { modelContext.delete(entry) }
+        for goal in goals { modelContext.delete(goal) }
+        for comp in bodyComps { modelContext.delete(comp) }
+        for checkIn in checkIns { modelContext.delete(checkIn) }
+        try? modelContext.save()
     }
 
     private func exportData() {

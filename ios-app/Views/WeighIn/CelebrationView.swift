@@ -12,20 +12,7 @@ struct CelebrationView: View {
     @State private var autoTimer: Timer?
 
     private var streak: Int {
-        // Simplified streak calc
-        let uniqueDates = Array(Set(weights.map(\.date))).sorted(by: >)
-        guard !uniqueDates.isEmpty else { return 0 }
-        let today = DateHelpers.todayString()
-        let yesterday = DateHelpers.daysAgo(1)
-        guard uniqueDates[0] == today || uniqueDates[0] == yesterday else { return 0 }
-        var count = 1
-        for i in 1..<uniqueDates.count {
-            guard let prev = DateHelpers.date(from: uniqueDates[i - 1]),
-                  let curr = DateHelpers.date(from: uniqueDates[i]) else { break }
-            if Calendar.current.dateComponents([.day], from: curr, to: prev).day == 1 { count += 1 }
-            else { break }
-        }
-        return count
+        StreakCalculator.calculate(from: weights.map(\.date))
     }
 
     private var prevWeight: Double? {

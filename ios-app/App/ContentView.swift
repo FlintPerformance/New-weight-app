@@ -46,10 +46,42 @@ struct ContentView: View {
         .onChange(of: auth.isAuthenticated) { _, isAuth in
             if isAuth, let userId = auth.user?.id {
                 Task {
-                    try? await SyncService.shared.sync(userId: userId, modelContext: modelContext)
+                    do {
+                        try await SyncService.shared.sync(userId: userId, modelContext: modelContext)
+                        appState.syncError = nil
+                    } catch {
+                        appState.syncError = "Couldn't sync your data. Changes are saved locally."
+                    }
                 }
             }
         }
+        .overlay(alignment: .top) {
+            if let syncError = appState.syncError {
+                HStack(spacing: 8) {
+                    Image(systemName: "wifi.exclamationmark")
+                        .font(.caption)
+                    Text(syncError)
+                        .font(.caption)
+                    Spacer()
+                    Button {
+                        withAnimation { appState.syncError = nil }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                    }
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(AppColors.warning)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: appState.syncError)
     }
 }
 
@@ -83,7 +115,9 @@ struct MainTabView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selectedTab) {
-                HomeView(showWeighIn: $showWeighIn)
+                HomeView(showWeighIn: $showWeighIn, onNavigateToProgress: {
+                    withAnimation { selectedTab = .progress }
+                })
                     .tag(Tab.home)
 
                 ProgressView()

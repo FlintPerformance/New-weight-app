@@ -81,6 +81,28 @@ enum ChartHelpers {
     }
 }
 
+// MARK: - Streak calculation
+
+enum StreakCalculator {
+    /// Calculates the current consecutive-day streak from a list of date strings.
+    /// Dates should be in "yyyy-MM-dd" format.
+    static func calculate(from dates: [String]) -> Int {
+        let uniqueDates = Array(Set(dates)).sorted(by: >)
+        guard !uniqueDates.isEmpty else { return 0 }
+        let today = DateHelpers.todayString()
+        let yesterday = DateHelpers.daysAgo(1)
+        guard uniqueDates[0] == today || uniqueDates[0] == yesterday else { return 0 }
+        var count = 1
+        for i in 1..<uniqueDates.count {
+            guard let prev = DateHelpers.date(from: uniqueDates[i - 1]),
+                  let curr = DateHelpers.date(from: uniqueDates[i]) else { break }
+            if Calendar.current.dateComponents([.day], from: curr, to: prev).day == 1 { count += 1 }
+            else { break }
+        }
+        return count
+    }
+}
+
 // MARK: - Streak messages
 
 enum StreakMessages {

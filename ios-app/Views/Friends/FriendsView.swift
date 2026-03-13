@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 import SwiftData
 
 struct FriendsView: View {
@@ -673,7 +672,7 @@ struct MemberCard: View {
 struct CompareTabView: View {
     @EnvironmentObject var vm: CircleViewModel
     let goalDirection: WeightGoalDirection?
-    @State private var selectedDate: Date?
+    @State private var chartSelection: ChartSelection?
 
     private static let memberColors: [Color] = [AppColors.accent, AppColors.success, AppColors.warning, .purple, .orange, .pink]
 
@@ -682,21 +681,12 @@ struct CompareTabView: View {
         return Self.memberColors[index]
     }
 
-    private struct ChartPoint: Identifiable {
-        let id = UUID()
-        let date: Date
-        let weight: Double
-        let name: String
-    }
-
-    private var chartPoints: [ChartPoint] {
-        var points: [ChartPoint] = []
-        for member in vm.members {
+    private var chartSeries: [ChartSeries] {
+        vm.members.compactMap { member in
             let entries = vm.feed
                 .filter { $0.userId == member.userId }
                 .sorted { $0.date < $1.date }
 
-            // Daily averages per member
             var sums: [String: Double] = [:]
             var counts: [String: Int] = [:]
             for entry in entries {
@@ -704,13 +694,14 @@ struct CompareTabView: View {
                 counts[entry.date, default: 0] += 1
             }
 
-            for dateStr in sums.keys.sorted() {
-                guard let d = DateHelpers.date(from: dateStr) else { continue }
-                let avg = sums[dateStr]! / Double(counts[dateStr]!)
-                points.append(ChartPoint(date: d, weight: avg, name: member.displayName))
+            let points: [ChartDataPoint] = sums.keys.sorted().compactMap { dateStr in
+                guard let d = DateHelpers.date(from: dateStr) else { return nil }
+                return ChartDataPoint(date: d, value: sums[dateStr]! / Double(counts[dateStr]!))
             }
+
+            guard !points.isEmpty else { return nil }
+            return ChartSeries(name: member.displayName, color: colorFor(member), points: points)
         }
-        return points
     }
 
     private var hasData: Bool {
@@ -719,31 +710,9 @@ struct CompareTabView: View {
         }
     }
 
-    private var compareYDomain: ClosedRange<Double> {
-        ChartHelpers.yDomain(for: chartPoints.map(\.weight))
-    }
-
-    private var compareXDomain: ClosedRange<Date> {
-        let dates = chartPoints.map(\.date)
-        guard let first = dates.min(), let last = dates.max() else {
-            return Date()...Date()
-        }
-        let pad: TimeInterval = 86400 * 0.5
-        return first.addingTimeInterval(-pad)...last.addingTimeInterval(pad)
-    }
-
-    private var selectedPointsText: String? {
-        guard let sel = selectedDate else { return nil }
-        // Find nearest points per member within 12 hours
-        var texts: [String] = []
-        for member in vm.members {
-            let memberPoints = chartPoints.filter { $0.name == member.displayName }
-            if let nearest = memberPoints.min(by: { abs($0.date.timeIntervalSince(sel)) < abs($1.date.timeIntervalSince(sel)) }),
-               abs(nearest.date.timeIntervalSince(sel)) < 86400 {
-                texts.append("\(nearest.name): \(String(format: "%.1f", nearest.weight))")
-            }
-        }
-        return texts.isEmpty ? nil : texts.joined(separator: "  ·  ")
+    private var allDates: [Date] {
+        let dates = chartSeries.flatMap { $0.points.map(\.date) }
+        return Array(Set(dates)).sorted()
     }
 
     var body: some View {
@@ -754,57 +723,40 @@ struct CompareTabView: View {
             VStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     // Selection readout
-                    if let sel = selectedDate {
+                    if let sel = chartSelection {
                         HStack {
-                            Text(DateHelpers.formatShort(DateHelpers.formatDate(sel)))
+                            Text(DateHelpers.formatShort(DateHelpers.formatDate(sel.date)))
                                 .font(.caption)
                                 .fontWeight(.medium)
                             Spacer()
-                            if let text = selectedPointsText {
-                                Text(text)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
+                            Text(sel.values.map { "\($0.name): \(String(format: "%.1f", $0.value))" }.joined(separator: "  ·  "))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
                         }
                         .transition(.opacity)
                     }
 
-                    // Chart
-                    Chart {
-                        ForEach(chartPoints) { point in
-                            LineMark(
-                                x: .value("Date", point.date),
-                                y: .value("Weight", point.weight)
-                            )
-                            .foregroundStyle(by: .value("Member", point.name))
-                            .lineStyle(StrokeStyle(lineWidth: 2.5))
-                            .interpolationMethod(.catmullRom)
-                        }
-
-                        if let sel = selectedDate {
-                            RuleMark(x: .value("Selected", sel))
-                                .foregroundStyle(.secondary.opacity(0.4))
-                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    SmoothCompareChart(
+                        series: chartSeries,
+                        height: 260
+                    ) { selection in
+                        withAnimation(.easeOut(duration: 0.15)) {
+                            chartSelection = selection
                         }
                     }
-                    .chartXSelection(value: $selectedDate)
-                    .chartForegroundStyleScale(
-                        domain: vm.members.map(\.displayName),
-                        range: vm.members.map { colorFor($0) }
-                    )
-                    .chartYScale(domain: compareYDomain)
-                    .chartXScale(domain: compareXDomain)
-                    .chartXAxis {
-                        AxisMarks(values: .automatic) { value in
-                            AxisValueLabel {
-                                if let date = value.as(Date.self) {
-                                    Text(DateHelpers.formatShort(DateHelpers.formatDate(date))).font(.caption2)
-                                }
+
+                    ChartXAxisLabels(dates: allDates)
+                        .padding(.top, 4)
+
+                    // Color legend
+                    HStack(spacing: 12) {
+                        ForEach(chartSeries, id: \.name) { s in
+                            HStack(spacing: 4) {
+                                SwiftUI.Circle().fill(s.color).frame(width: 8, height: 8)
+                                Text(s.name).font(.caption2).foregroundStyle(.secondary)
                             }
                         }
                     }
-                    .chartLegend(position: .bottom, spacing: 12)
-                    .frame(height: 260)
                 }
                 .padding()
                 .background(.regularMaterial)
